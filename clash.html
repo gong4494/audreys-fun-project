@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Card Clash - 1v1 Battle</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a2e;
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; font-family: 'Segoe UI', sans-serif;
+  overflow: hidden; color: #fff;
+  touch-action: none;
+}
+#game-container {
+  position: relative; width: 420px; height: 700px;
+  background: #2d5a27; border: 3px solid #444; border-radius: 8px;
+  overflow: hidden; user-select: none;
+}
+/* Arena */
+#arena {
+  position: relative; width: 100%; height: 520px;
+  background: linear-gradient(to bottom, #3a7a33 0%, #2d6a27 45%, #8B7355 45%, #8B7355 55%, #2d6a27 55%, #3a7a33 100%);
+}
+/* River */
+#arena::before {
+  content: ''; position: absolute; top: 47%; width: 100%; height: 6%;
+  background: linear-gradient(to bottom, #2196F3, #1976D2);
+  z-index: 1; pointer-events: none;
+}
+/* Bridges */
+.bridge {
+  position: absolute; top: 46%; height: 8%; width: 50px;
+  background: #8B6914; z-index: 2; border: 2px solid #6B4914;
+  pointer-events: none;
+}
+.bridge.left { left: 60px; }
+.bridge.right { right: 60px; }
+/* Deploy zone highlight */
+.deploy-zone {
+  position: absolute; left: 0; right: 0; top: 53%; bottom: 0;
+  background: rgba(33,150,243,0.08); border-top: 2px dashed rgba(33,150,243,0.3);
+  z-index: 0; pointer-events: none; display: none;
+}
+.deploy-zone.active { display: block; }
+/* Towers */
+.tower {
+  position: absolute; border-radius: 50%; z-index: 3;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: bold; font-size: 11px; text-shadow: 1px 1px 2px #000;
+  transition: background 0.2s;
+  pointer-events: none;
+}
+.tower.player { border: 3px solid #2196F3; background: #1565C0; }
+.tower.enemy { border: 3px solid #f44336; background: #c62828; }
+.tower.king { width: 50px; height: 50px; }
+.tower.princess { width: 40px; height: 40px; }
+.tower.destroyed { opacity: 0.3; background: #333 !important; border-color: #555 !important; }
+.tower .hp-bar {
+  position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%);
+  width: 40px; height: 5px; background: #333; border-radius: 3px;
+}
+.tower .hp-fill {
+  height: 100%; border-radius: 3px; transition: width 0.3s;
+}
+.tower.player .hp-fill { background: #2196F3; }
+.tower.enemy .hp-fill { background: #f44336; }
+/* Troops */
+.troop {
+  position: absolute; z-index: 4; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  pointer-events: none;
+}
+.troop.player-troop { box-shadow: 0 0 6px #2196F3; border: 2px solid #2196F3; }
+.troop.enemy-troop { box-shadow: 0 0 6px #f44336; border: 2px solid #f44336; }
+.troop .troop-hp {
+  position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+  width: 24px; height: 3px; background: #333; border-radius: 2px;
+}
+.troop .troop-hp-fill { height: 100%; border-radius: 2px; }
+.troop.player-troop .troop-hp-fill { background: #2196F3; }
+.troop.enemy-troop .troop-hp-fill { background: #f44336; }
+/* Flying troop */
+.troop.flying {
+  filter: drop-shadow(0 8px 6px rgba(0,0,0,0.4));
+  animation: hover 1s ease-in-out infinite alternate;
+}
+@keyframes hover {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-6px); }
+}
+/* Hero avatar */
+.troop .hero-avatar {
+  width: 100%; height: 100%; border-radius: 50%;
+  object-fit: cover; pointer-events: none;
+}
+/* Fireball projectile */
+.projectile.fireball {
+  width: 10px; height: 10px;
+  background: radial-gradient(circle, #FFD700, #FF6600, #FF0000);
+  box-shadow: 0 0 8px #FF6600, 0 0 16px #FF3300;
+  border-radius: 50%;
+}
+/* Lightning projectile */
+.projectile.lightning {
+  width: 8px; height: 8px;
+  background: radial-gradient(circle, #FFFFFF, #E1BEE7, #9C27B0);
+  box-shadow: 0 0 10px #CE93D8, 0 0 20px #9C27B0, 0 0 30px #7B1FA2;
+  border-radius: 50%;
+}
+/* Lightning strike effect */
+.lightning-strike {
+  position: absolute; z-index: 6; pointer-events: none;
+  width: 60px; height: 60px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(206,147,216,0.6), rgba(156,39,176,0.2), transparent 70%);
+  box-shadow: 0 0 20px #CE93D8, 0 0 40px rgba(156,39,176,0.4);
+  animation: lightningFlash 0.4s forwards;
+}
+@keyframes lightningFlash {
+  0% { opacity: 1; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+/* Hero card gold border */
+.card.hero-card { border-color: #FFD700; background: linear-gradient(135deg, #3a2a1a, #2a1a0a); }
+.card.hero-card .card-cost { background: #FF6600; }
+/* Hero2 (Lightning Princess) card */
+.card.hero2-card { border-color: #9C27B0; background: linear-gradient(135deg, #1a1a3a, #2a0a3a); }
+.card.hero2-card .card-cost { background: #9C27B0; }
+/* Projectiles */
+.projectile {
+  position: absolute; z-index: 5; width: 6px; height: 6px;
+  background: #FFD700; border-radius: 50%; pointer-events: none;
+  box-shadow: 0 0 4px #FFD700;
+}
+/* Damage numbers */
+.damage-number {
+  position: absolute; z-index: 10; font-size: 14px; font-weight: bold;
+  color: #ff4444; text-shadow: 1px 1px 0 #000;
+  pointer-events: none; animation: floatUp 0.8s forwards;
+}
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-30px); }
+}
+/* Spawn indicator */
+.spawn-indicator {
+  position: absolute; z-index: 6; border-radius: 50%;
+  background: rgba(33, 150, 243, 0.3); border: 2px dashed #2196F3;
+  pointer-events: none; animation: pulse 0.5s infinite alternate;
+}
+.spawn-indicator.invalid {
+  background: rgba(244, 67, 54, 0.2); border-color: #f44336;
+}
+@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
+/* Drag ghost */
+#drag-ghost {
+  position: fixed; z-index: 1000; pointer-events: none;
+  font-size: 40px; display: none;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+  transform: translate(-50%, -50%);
+}
+/* HUD */
+#hud {
+  position: absolute; bottom: 0; width: 100%; height: 180px;
+  background: linear-gradient(to bottom, #1a1a2e, #16213e);
+  border-top: 2px solid #444;
+}
+#elixir-bar {
+  display: flex; align-items: center; padding: 6px 10px; gap: 6px;
+}
+#elixir-bar .label { color: #e040fb; font-weight: bold; font-size: 14px; min-width: 20px; }
+#elixir-track {
+  flex: 1; height: 16px; background: #333; border-radius: 8px;
+  overflow: hidden; position: relative;
+}
+#elixir-fill {
+  height: 100%; background: linear-gradient(to right, #e040fb, #ce93d8);
+  border-radius: 8px; transition: width 0.1s;
+}
+#card-hand {
+  display: flex; justify-content: center; gap: 6px; padding: 4px 10px;
+}
+.card {
+  width: 85px; height: 105px; background: linear-gradient(135deg, #2a2a4a, #1a1a3a);
+  border: 2px solid #555; border-radius: 8px; cursor: grab;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; transition: transform 0.15s, border-color 0.15s, opacity 0.15s;
+  position: relative;
+}
+.card:hover { transform: translateY(-5px); border-color: #2196F3; }
+.card.selected { transform: translateY(-10px); border-color: #FFD700; box-shadow: 0 0 12px #FFD700; }
+.card.disabled { opacity: 0.4; cursor: not-allowed; }
+.card.dragging { opacity: 0.3; transform: scale(0.9); }
+.card .card-icon { font-size: 28px; pointer-events: none; }
+.card .card-name { font-size: 10px; margin-top: 2px; color: #ccc; pointer-events: none; }
+.card .card-cost {
+  position: absolute; top: 4px; right: 6px;
+  background: #e040fb; color: #fff; border-radius: 50%;
+  width: 20px; height: 20px; display: flex; align-items: center;
+  justify-content: center; font-size: 11px; font-weight: bold;
+  pointer-events: none;
+}
+.card .card-stats { font-size: 8px; color: #999; margin-top: 2px; pointer-events: none; }
+#next-card {
+  position: absolute; right: 10px; bottom: 50px;
+  width: 40px; height: 50px; background: #2a2a4a; border: 2px solid #444;
+  border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+#next-card-label { position: absolute; right: 10px; bottom: 102px; font-size: 9px; color: #888; }
+/* Hint text */
+#deploy-hint {
+  position: absolute; bottom: 184px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.7); padding: 4px 12px; border-radius: 10px;
+  font-size: 11px; color: #aaa; z-index: 10; pointer-events: none;
+  transition: opacity 0.3s;
+}
+/* Timer */
+#timer {
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.7); padding: 4px 14px; border-radius: 12px;
+  font-size: 16px; font-weight: bold; z-index: 10; pointer-events: none;
+}
+#timer.overtime { color: #ff9800; }
+/* Score */
+#score {
+  position: absolute; top: 8px; left: 8px; z-index: 10;
+  display: flex; gap: 8px; font-size: 14px; pointer-events: none;
+}
+.crown { color: #FFD700; }
+.crown.empty { color: #555; }
+/* Overlay */
+#overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.85);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; z-index: 100;
+}
+#overlay h1 { font-size: 36px; margin-bottom: 10px; }
+#overlay h2 { font-size: 20px; margin-bottom: 20px; color: #ccc; }
+#overlay .btn {
+  padding: 12px 36px; font-size: 18px; border: none;
+  border-radius: 8px; cursor: pointer; font-weight: bold;
+  margin: 6px;
+}
+.btn-play { background: linear-gradient(135deg, #4CAF50, #2E7D32); color: #fff; }
+.btn-play:hover { background: linear-gradient(135deg, #66BB6A, #388E3C); }
+#overlay .result-text { font-size: 48px; margin-bottom: 20px; }
+#crown-display { font-size: 32px; margin: 10px 0; }
+.hidden { display: none !important; }
+/* Attack flash */
+.tower.hit { animation: towerHit 0.15s; }
+@keyframes towerHit { 50% { filter: brightness(2); } }
+</style>
+</head>
+<body>
+<div id="game-container">
+  <div id="arena">
+    <div id="timer">3:00</div>
+    <div id="score">
+      <div id="player-crowns"></div>
+      <div id="enemy-crowns"></div>
+    </div>
+    <div class="bridge left"></div>
+    <div class="bridge right"></div>
+    <div class="deploy-zone" id="deploy-zone"></div>
+  </div>
+  <div id="hud">
+    <div id="elixir-bar">
+      <span class="label" id="elixir-count">0</span>
+      <div id="elixir-track"><div id="elixir-fill"></div></div>
+    </div>
+    <div id="card-hand"></div>
+    <div id="next-card-label">NEXT</div>
+    <div id="next-card"></div>
+  </div>
+  <div id="deploy-hint">Drag a card onto your side to deploy!</div>
+  <div id="overlay">
+    <h1>Card Clash</h1>
+    <h2>1v1 Battle</h2>
+    <button class="btn btn-play" onclick="startGame()">BATTLE!</button>
+  </div>
+</div>
+<div id="drag-ghost"></div>
+
+<script>
+// ============ GAME CONFIG ============
+const ARENA_W = 420, ARENA_H = 520;
+const ELIXIR_MAX = 10;
+const GAME_DURATION = 180;
+const OVERTIME_DURATION = 60;
+const ELIXIR_RATE = 0.035;
+const ELIXIR_RATE_OT = 0.07;
+const DEPLOY_MIN_Y = ARENA_H * 0.53; // below river only
+
+const HERO2_AVATAR = 'data:image/jpeg;base64,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Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOm13Zy1ycz0iaHR0cDovL3d3dy5tZXRhZGF0YXdvcmtpbmdncm91cC5jb20vc2NoZW1hcy9yZWdpb25zLyIgeG1sbnM6c3RBcmVhPSJodHRwOi8vbnMuYWRvYmUuY29tL3htcC9zVHlwZS9BcmVhIyIgeG1sbnM6YXBwbGUtZmk9Imh0dHA6Ly9ucy5hcHBsZS5jb20vZmFjZWluZm8vMS4wLyIgeG1sbnM6c3REaW09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9EaW1lbnNpb25zIyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bXA6Q3JlYXRlRGF0ZT0iMjAyNi0wMi0yMVQxNDoxOTo0OCIgeG1wOk1vZGlmeURhdGU9IjIwMjYtMDItMjFUMTQ6MTk6NDgiIHBob3Rvc2hvcDpEYXRlQ3JlYXRlZD0iMjAyNi0wMi0yMVQxNDoxOTo0OCI+IDxtd2ctcnM6UmVnaW9ucyByZGY6cGFyc2VUeXBlPSJSZXNvdXJjZSI+IDxtd2ctcnM6UmVnaW9uTGlzdD4gPHJkZjpTZXE+IDxyZGY6bGk+IDxyZGY6RGVzY3JpcHRpb24gbXdnLXJzOlR5cGU9IkZhY2UiPiA8bXdnLXJzOkFyZWEgc3RBcmVhOnk9IjAuNTg0NTAwMDAwMDAwMDAwMDIiIHN0QXJlYTp3PSIwLjExNjI4NTcxNDI4NTcxNDMzIiBzdEFyZWE6eD0iMC41Njg2MTkwNDc2MTkwNDc2OSIgc3RBcmVhOmg9IjAuMTU1MDAwMDAwMDAwMDAwMDMiIHN0QXJlYTp1bml0PSJub3JtYWxpemVkIi8+IDxtd2ctcnM6RXh0ZW5zaW9ucyBhcHBsZS1maTpBbmdsZUluZm9ZYXc9IjM1NCIgYXBwbGUtZmk6QW5nbGVJbmZvUm9sbD0iMjUzIiBhcHBsZS1maTpDb25maWRlbmNlTGV2ZWw9IjY1NSIgYXBwbGUtZmk6RmFjZUlEPSIzMjgiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOmxpPiA8cmRmOmxpPiA8cmRmOkRlc2NyaXB0aW9uIG13Zy1yczpUeXBlPSJGb2N1cyI+IDxtd2ctcnM6QXJlYSBzdEFyZWE6eT0iMC41OTQ5OTk5OTk5OTk5OTk5NyIgc3RBcmVhOnc9IjAuMTE2Mjg1NzE0Mjg1NzE0MzMiIHN0QXJlYTp4PSIwLjU2OTY2NjY2NjY2NjY2NjY1IiBzdEFyZWE6aD0iMC4xNTYwMDAwMDAwMDAwMDAwMyIgc3RBcmVhOnVuaXQ9Im5vcm1hbGl6ZWQiLz4gPG13Zy1yczpFeHRlbnNpb25zIHJkZjpwYXJzZVR5cGU9IlJlc291cmNlIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpsaT4gPC9yZGY6U2VxPiA8L213Zy1yczpSZWdpb25MaXN0PiA8bXdnLXJzOkFwcGxpZWRUb0RpbWVuc2lvbnMgc3REaW06aD0iNDI4NCIgc3REaW06dz0iNTcxMiIgc3REaW06dW5pdD0icGl4ZWwiLz4gPC9td2ctcnM6UmVnaW9ucz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPD94cGFja2V0IGVuZD0idyI/PgD/7QA4UGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAAA4QklNBCUAAAAAABDUHYzZjwCyBOmACZjs+EJ+/+ICKElDQ19QUk9GSUxFAAEBAAACGGFwcGwEAAAAbW50clJHQiBYWVogB+YAAQABAAAAAAAAYWNzcEFQ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';
+
+const HERO_AVATAR = 'data:image/jpeg;base64,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ZS5jb20veGFwLzEuMC8iIHhtbG5zOm13Zy1ycz0iaHR0cDovL3d3dy5tZXRhZGF0YXdvcmtpbmdncm91cC5jb20vc2NoZW1hcy9yZWdpb25zLyIgeG1sbnM6c3RBcmVhPSJodHRwOi8vbnMuYWRvYmUuY29tL3htcC9zVHlwZS9BcmVhIyIgeG1sbnM6YXBwbGUtZmk9Imh0dHA6Ly9ucy5hcHBsZS5jb20vZmFjZWluZm8vMS4wLyIgeG1sbnM6c3REaW09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9EaW1lbnNpb25zIyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bXA6Q3JlYXRlRGF0ZT0iMjAyNi0wMi0xN1QxODo0OTo1MiIgeG1wOk1vZGlmeURhdGU9IjIwMjYtMDItMTdUMTg6NDk6NTIiIHBob3Rvc2hvcDpEYXRlQ3JlYXRlZD0iMjAyNi0wMi0xN1QxODo0OTo1MiI+IDxtd2ctcnM6UmVnaW9ucyByZGY6cGFyc2VUeXBlPSJSZXNvdXJjZSI+IDxtd2ctcnM6UmVnaW9uTGlzdD4gPHJkZjpTZXE+IDxyZGY6bGk+IDxyZGY6RGVzY3JpcHRpb24gbXdnLXJzOlR5cGU9IkZhY2UiPiA8bXdnLXJzOkFyZWEgc3RBcmVhOnk9IjAuMzU5OTk5OTk5OTk5OTk5OTkiIHN0QXJlYTp3PSIwLjQxMDY2NjY2NjY2NjY2Njc0IiBzdEFyZWE6eD0iMC40Mjc3MTQyODU3MTQyODU3MSIgc3RBcmVhOmg9IjAuNTQ4MDAwMDAwMDAwMDAwMDQiIHN0QXJlYTp1bml0PSJub3JtYWxpemVkIi8+IDxtd2ctcnM6RXh0ZW5zaW9ucyBhcHBsZS1maTpBbmdsZUluZm9ZYXc9IjM1NCIgYXBwbGUtZmk6QW5nbGVJbmZvUm9sbD0iMjc0IiBhcHBsZS1maTpDb25maWRlbmNlTGV2ZWw9IjU3NiIgYXBwbGUtZmk6RmFjZUlEPSIyMjEiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOmxpPiA8L3JkZjpTZXE+IDwvbXdnLXJzOlJlZ2lvbkxpc3Q+IDxtd2ctcnM6QXBwbGllZFRvRGltZW5zaW9ucyBzdERpbTpoPSI0Mjg0IiBzdERpbTp3PSI1NzEyIiBzdERpbTp1bml0PSJwaXhlbCIvPiA8L213Zy1yczpSZWdpb25zPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8P3hwYWNrZXQgZW5kPSJ3Ij8+AP/tADhQaG90b3Nob3AgMy4wADhCSU0EBAAAAAAAADhCSU0EJQAAAAAAENQdjNmPALIE6YAJmOz4Qn7/4gIoSUNDX1BST0ZJTEUAAQEAAAIYYXBwbAQAAABtbnRyUkdCIFhZWiAH5gABAAEAAAAAAABhY3NwQVBQTAAAAABBUFBMAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWFwcGzs/aOOOIVHw220vU962hgvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAADBjcHJ0AAABLAAAAFB3dHB0AAABfAAAABRyWFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAACBjaGFkAAAB7AAAACxiVFJDAAABzAAAACBnVFJDAAABzAAAACBtbHVjAAAAAAAAAAEAAAAMZW5VUwAAABQAAAAcAEQAaQBzAHAAbABhAHkAIABQADNtbHVjAAAAAAAAAAEAAAAMZW5VUwAAADQAAAAcAEMAbwBwAHkAcgBpAGcAaAB0ACAAQQBwAHAAbABlACAASQBuAGMALgAsACAAMgAwADIAMlhZWiAAAAAAAAD21QABAAAAANMsWFlaIAAAAAAAAIPfAAA9v////7tYWVog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';
+
+const CARD_DEFS = {
+  hero:      { name: 'Hero',     icon: '👦', cost: 4, hp: 700, dmg: 160, speed: 1.4, range: 120, atkSpeed: 16, size: 28, type: 'ranged', flying: true, splash: 35, isHero: true },
+  knight:    { name: 'Knight',   icon: '🗡️', cost: 3, hp: 600, dmg: 75,  speed: 1.2, range: 30,  atkSpeed: 15, size: 22, type: 'melee' },
+  archer:    { name: 'Archer',   icon: '🏹', cost: 3, hp: 250, dmg: 50,  speed: 1.0, range: 120, atkSpeed: 12, size: 18, type: 'ranged', count: 2 },
+  giant:     { name: 'Giant',    icon: '👊', cost: 5, hp: 1800,dmg: 100, speed: 0.6, range: 30,  atkSpeed: 20, size: 28, type: 'melee', targetBuilding: true },
+  wizard:    { name: 'Wizard',   icon: '🔮', cost: 5, hp: 340, dmg: 130, speed: 0.8, range: 110, atkSpeed: 18, size: 20, type: 'ranged', splash: 40 },
+  minipekka: { name: 'Mini P.',  icon: '🤖', cost: 4, hp: 600, dmg: 200, speed: 1.3, range: 30,  atkSpeed: 20, size: 22, type: 'melee' },
+  musketeer: { name: 'Musket.',  icon: '🔫', cost: 4, hp: 340, dmg: 90,  speed: 0.8, range: 130, atkSpeed: 14, size: 18, type: 'ranged' },
+  barbarians:{ name: 'Barbs',    icon: '⚔️', cost: 5, hp: 300, dmg: 55,  speed: 1.0, range: 30,  atkSpeed: 14, size: 18, type: 'melee', count: 4 },
+  bomber:    { name: 'Bomber',   icon: '💣', cost: 3, hp: 200, dmg: 110, speed: 0.8, range: 100, atkSpeed: 20, size: 18, type: 'ranged', splash: 30 },
+  hero2:     { name: 'Princess', icon: '⚡', cost: 5, hp: 800, dmg: 140, speed: 1.0, range: 130, atkSpeed: 18, size: 28, type: 'ranged', splash: 55, isHero2: true, lightning: true },
+};
+
+const TOWER_HP = { king: 2400, princess: 1400 };
+const TOWER_DMG = { king: 80, princess: 55 };
+const TOWER_RANGE = 120;
+const TOWER_ATK_SPEED = 15;
+
+// ============ GAME STATE ============
+let state = null;
+let animFrame = null;
+let selectedCard = null;
+let spawnIndicator = null;
+
+// Drag state
+let dragging = false;
+let dragCardIndex = null;
+let dragGhost = document.getElementById('drag-ghost');
+
+function initState() {
+  const deck = Object.keys(CARD_DEFS);
+  const playerCards = [...deck].sort(() => Math.random() - 0.5);
+  const botCards = [...deck].sort(() => Math.random() - 0.5);
+
+  const playerHand = playerCards.splice(0, 4);
+  const playerNext = playerCards.shift();
+
+  const botHand = botCards.splice(0, 4);
+  const botNext = botCards.shift();
+
+  return {
+    running: false,
+    time: GAME_DURATION,
+    overtime: false,
+    elixir: 5,
+    botElixir: 5,
+    troops: [],
+    projectiles: [],
+    towers: {
+      playerKing:  { id:'pk', side:'player', type:'king',    x: 210, y: 475, hp: TOWER_HP.king,    maxHp: TOWER_HP.king,    dmg: TOWER_DMG.king,    atkCd: 0, active: false },
+      playerLeft:  { id:'pl', side:'player', type:'princess', x: 80,  y: 395, hp: TOWER_HP.princess, maxHp: TOWER_HP.princess, dmg: TOWER_DMG.princess, atkCd: 0, active: true },
+      playerRight: { id:'pr', side:'player', type:'princess', x: 340, y: 395, hp: TOWER_HP.princess, maxHp: TOWER_HP.princess, dmg: TOWER_DMG.princess, atkCd: 0, active: true },
+      enemyKing:   { id:'ek', side:'enemy',  type:'king',    x: 210, y: 45,  hp: TOWER_HP.king,    maxHp: TOWER_HP.king,    dmg: TOWER_DMG.king,    atkCd: 0, active: false },
+      enemyLeft:   { id:'el', side:'enemy',  type:'princess', x: 80,  y: 125, hp: TOWER_HP.princess, maxHp: TOWER_HP.princess, dmg: TOWER_DMG.princess, atkCd: 0, active: true },
+      enemyRight:  { id:'er', side:'enemy',  type:'princess', x: 340, y: 125, hp: TOWER_HP.princess, maxHp: TOWER_HP.princess, dmg: TOWER_DMG.princess, atkCd: 0, active: true },
+    },
+    playerCrowns: 0,
+    enemyCrowns: 0,
+    playerDeck: playerCards,
+    playerHand: playerHand,
+    playerNext: playerNext,
+    botDeck: botCards,
+    botHand: botHand,
+    botNext: botNext,
+    botTimer: 60,
+    frameCount: 0,
+  };
+}
+
+// ============ RENDERING ============
+const arena = document.getElementById('arena');
+const gameContainer = document.getElementById('game-container');
+const cardHandEl = document.getElementById('card-hand');
+
+function renderTowers() {
+  document.querySelectorAll('.tower').forEach(e => e.remove());
+  for (const [key, t] of Object.entries(state.towers)) {
+    const el = document.createElement('div');
+    el.className = `tower ${t.side} ${t.type} ${t.hp <= 0 ? 'destroyed' : ''}`;
+    el.id = `tower-${t.id}`;
+    const size = t.type === 'king' ? 50 : 40;
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.left = (t.x - size/2) + 'px';
+    el.style.top = (t.y - size/2) + 'px';
+    el.innerHTML = `
+      ${t.type === 'king' ? '👑' : '🏰'}
+      <div class="hp-bar"><div class="hp-fill" style="width:${Math.max(0,t.hp/t.maxHp*100)}%"></div></div>
+    `;
+    arena.appendChild(el);
+  }
+}
+
+function updateTowerHP(t) {
+  const el = document.getElementById(`tower-${t.id}`);
+  if (!el) return;
+  const fill = el.querySelector('.hp-fill');
+  if (fill) fill.style.width = Math.max(0, t.hp / t.maxHp * 100) + '%';
+  if (t.hp <= 0) el.classList.add('destroyed');
+}
+
+function renderCards() {
+  cardHandEl.innerHTML = '';
+  state.playerHand.forEach((cardKey, i) => {
+    if (!cardKey) return;
+    const def = CARD_DEFS[cardKey];
+    const affordable = state.elixir >= def.cost;
+    const el = document.createElement('div');
+    const heroClass = def.isHero ? ' hero-card' : (def.isHero2 ? ' hero2-card' : '');
+    el.className = `card${!affordable ? ' disabled' : ''}${selectedCard === i ? ' selected' : ''}${dragging && dragCardIndex === i ? ' dragging' : ''}${heroClass}`;
+    el.dataset.index = i;
+    let iconHtml;
+    if (def.isHero) {
+      iconHtml = `<img src="${HERO_AVATAR}" style="width:36px;height:36px;border-radius:50%;border:2px solid #FFD700;pointer-events:none;">`;
+    } else if (def.isHero2) {
+      iconHtml = `<img src="${HERO2_AVATAR}" style="width:36px;height:36px;border-radius:50%;border:2px solid #9C27B0;pointer-events:none;">`;
+    } else {
+      iconHtml = `<div class="card-icon">${def.icon}</div>`;
+    }
+    const heroLabel = def.isHero ? '🔥 Hero 🔥' : (def.isHero2 ? '⚡ Princess ⚡' : def.name);
+    el.innerHTML = `
+      <div class="card-cost">${def.cost}</div>
+      ${iconHtml}
+      <div class="card-name">${heroLabel}</div>
+      <div class="card-stats">${def.flying ? 'FLYING ' : ''}HP:${def.hp} DMG:${def.dmg}</div>
+    `;
+    cardHandEl.appendChild(el);
+  });
+  // Next card
+  const nextEl = document.getElementById('next-card');
+  if (state.playerNext) {
+    const nextDef = CARD_DEFS[state.playerNext];
+    if (nextDef.isHero) {
+      nextEl.innerHTML = `<img src="${HERO_AVATAR}" style="width:28px;height:28px;border-radius:50%;border:1px solid #FFD700;">`;
+    } else if (nextDef.isHero2) {
+      nextEl.innerHTML = `<img src="${HERO2_AVATAR}" style="width:28px;height:28px;border-radius:50%;border:1px solid #9C27B0;">`;
+    } else {
+      nextEl.textContent = nextDef.icon;
+    }
+  }
+  // Elixir
+  document.getElementById('elixir-count').textContent = Math.floor(state.elixir);
+  document.getElementById('elixir-fill').style.width = (state.elixir / ELIXIR_MAX * 100) + '%';
+}
+
+function renderCrowns() {
+  const pc = document.getElementById('player-crowns');
+  const ec = document.getElementById('enemy-crowns');
+  pc.innerHTML = '<span style="color:#2196F3">You </span>' + Array(3).fill(0).map((_, i) => `<span class="crown ${i < state.playerCrowns ? '' : 'empty'}">★</span>`).join('');
+  ec.innerHTML = Array(3).fill(0).map((_, i) => `<span class="crown ${i < state.enemyCrowns ? '' : 'empty'}">★</span>`).join('') + '<span style="color:#f44336"> Bot</span>';
+}
+
+// ============ TROOP SPAWNING ============
+function spawnTroop(cardKey, x, y, side) {
+  const def = CARD_DEFS[cardKey];
+  const count = def.count || 1;
+  for (let i = 0; i < count; i++) {
+    const offsetX = count > 1 ? (i % 2 === 0 ? -15 : 15) : 0;
+    const offsetY = count > 1 ? (i < 2 ? -10 : 10) : 0;
+    const troop = {
+      id: Math.random().toString(36).substr(2, 6),
+      card: cardKey,
+      side,
+      x: x + offsetX,
+      y: y + offsetY,
+      hp: def.hp,
+      maxHp: def.hp,
+      dmg: def.dmg,
+      speed: def.speed,
+      range: def.range,
+      atkSpeed: def.atkSpeed,
+      atkCd: 0,
+      size: def.size,
+      type: def.type,
+      splash: def.splash || 0,
+      targetBuilding: def.targetBuilding || false,
+      flying: def.flying || false,
+      isHero: def.isHero || false,
+      isHero2: def.isHero2 || false,
+      lightning: def.lightning || false,
+      icon: def.icon,
+      el: null,
+    };
+    const el = document.createElement('div');
+    el.className = `troop ${side === 'player' ? 'player-troop' : 'enemy-troop'}${def.flying ? ' flying' : ''}`;
+    el.style.width = def.size + 'px';
+    el.style.height = def.size + 'px';
+    el.style.left = (troop.x - def.size/2) + 'px';
+    el.style.top = (troop.y - def.size/2) + 'px';
+    el.style.background = side === 'player' ? 'rgba(21,101,192,0.6)' : 'rgba(198,40,40,0.6)';
+    let innerHtml;
+    if (def.isHero) {
+      innerHtml = `<img class="hero-avatar" src="${HERO_AVATAR}"><div class="troop-hp"><div class="troop-hp-fill" style="width:100%"></div></div>`;
+    } else if (def.isHero2) {
+      innerHtml = `<img class="hero-avatar" src="${HERO2_AVATAR}" style="border:2px solid #9C27B0;box-shadow:0 0 8px #CE93D8;"><div class="troop-hp"><div class="troop-hp-fill" style="width:100%"></div></div>`;
+    } else {
+      innerHtml = `<span style="font-size:${Math.max(12, def.size - 6)}px">${def.icon}</span><div class="troop-hp"><div class="troop-hp-fill" style="width:100%"></div></div>`;
+    }
+    el.innerHTML = innerHtml;
+    arena.appendChild(el);
+    troop.el = el;
+    state.troops.push(troop);
+  }
+}
+
+function deployCard(cardIndex, arenaX, arenaY) {
+  if (!state || !state.running) return false;
+  const cardKey = state.playerHand[cardIndex];
+  if (!cardKey) return false;
+  const def = CARD_DEFS[cardKey];
+  if (state.elixir < def.cost) return false;
+  if (arenaY < DEPLOY_MIN_Y) return false;
+
+  // Clamp within arena
+  arenaX = Math.max(20, Math.min(ARENA_W - 20, arenaX));
+  arenaY = Math.max(DEPLOY_MIN_Y, Math.min(ARENA_H - 20, arenaY));
+
+  state.elixir -= def.cost;
+  spawnTroop(cardKey, arenaX, arenaY, 'player');
+
+  // Cycle card
+  const oldCard = state.playerHand[cardIndex];
+  state.playerHand[cardIndex] = state.playerNext;
+  state.playerDeck.push(oldCard);
+  state.playerNext = state.playerDeck.shift();
+
+  selectedCard = null;
+  renderCards();
+  return true;
+}
+
+// ============ GAME LOGIC ============
+function dist(a, b) {
+  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+}
+
+function findTarget(troop) {
+  const enemySide = troop.side === 'player' ? 'enemy' : 'player';
+  let best = null, bestDist = Infinity;
+
+  if (!troop.targetBuilding) {
+    for (const t of state.troops) {
+      if (t.side === enemySide && t.hp > 0) {
+        const d = dist(troop, t);
+        if (d < bestDist) { bestDist = d; best = { type: 'troop', ref: t, x: t.x, y: t.y }; }
+      }
+    }
+  }
+
+  for (const t of Object.values(state.towers)) {
+    if (t.hp <= 0) continue;
+    if (t.side !== enemySide) continue;
+    if (t.type === 'king') {
+      const prefix = enemySide === 'player' ? 'player' : 'enemy';
+      if (state.towers[prefix + 'Left'].hp > 0 && state.towers[prefix + 'Right'].hp > 0 && !t.active) continue;
+    }
+    const d = dist(troop, t);
+    if (d < bestDist) { bestDist = d; best = { type: 'tower', ref: t, x: t.x, y: t.y }; }
+  }
+  return best;
+}
+
+function findTowerTarget(tower) {
+  const enemySide = tower.side === 'player' ? 'enemy' : 'player';
+  let best = null, bestDist = Infinity;
+  for (const t of state.troops) {
+    if (t.side === enemySide && t.hp > 0) {
+      const d = dist(tower, t);
+      if (d < TOWER_RANGE && d < bestDist) { bestDist = d; best = t; }
+    }
+  }
+  return best;
+}
+
+function spawnLightningStrike(x, y) {
+  const el = document.createElement('div');
+  el.className = 'lightning-strike';
+  el.style.left = (x - 30) + 'px';
+  el.style.top = (y - 30) + 'px';
+  arena.appendChild(el);
+  setTimeout(() => el.remove(), 400);
+}
+
+function showDamage(x, y, dmg) {
+  const el = document.createElement('div');
+  el.className = 'damage-number';
+  el.textContent = '-' + dmg;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  arena.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+
+function spawnProjectile(from, to, dmg, splash, side, isFireball, isLightning) {
+  const el = document.createElement('div');
+  el.className = isFireball ? 'projectile fireball' : (isLightning ? 'projectile lightning' : 'projectile');
+  el.style.left = from.x + 'px';
+  el.style.top = from.y + 'px';
+  arena.appendChild(el);
+  state.projectiles.push({
+    el, x: from.x, y: from.y,
+    tx: to.x, ty: to.y,
+    dmg, splash, side, speed: isFireball ? 5 : (isLightning ? 7 : 6),
+    target: to.ref || null,
+    isLightning: isLightning || false,
+  });
+}
+
+function updateProjectiles() {
+  for (let i = state.projectiles.length - 1; i >= 0; i--) {
+    const p = state.projectiles[i];
+    const dx = p.tx - p.x, dy = p.ty - p.y;
+    const d = Math.sqrt(dx*dx + dy*dy);
+    if (d < p.speed) {
+      if (p.target && p.target.hp > 0) {
+        applyDamage(p.target, p.dmg, p.splash, p.side);
+        if (p.isLightning) {
+          spawnLightningStrike(p.tx, p.ty);
+        }
+      }
+      p.el.remove();
+      state.projectiles.splice(i, 1);
+    } else {
+      p.x += dx/d * p.speed;
+      p.y += dy/d * p.speed;
+      p.el.style.left = p.x + 'px';
+      p.el.style.top = p.y + 'px';
+    }
+  }
+}
+
+function applyDamage(target, dmg, splash, attackerSide) {
+  target.hp -= dmg;
+  showDamage(target.x, target.y - 10, dmg);
+
+  if (splash > 0) {
+    const enemySide = attackerSide === 'player' ? 'enemy' : 'player';
+    for (const t of state.troops) {
+      if (t !== target && t.side === enemySide && t.hp > 0) {
+        if (dist(t, target) < splash) {
+          const splashDmg = Math.floor(dmg * 0.5);
+          t.hp -= splashDmg;
+          showDamage(t.x, t.y - 10, splashDmg);
+        }
+      }
+    }
+  }
+
+  // Tower hit flash
+  if (target.id && (target.type === 'king' || target.type === 'princess')) {
+    const tel = document.getElementById(`tower-${target.id}`);
+    if (tel) { tel.classList.add('hit'); setTimeout(() => tel.classList.remove('hit'), 150); }
+
+    if (target.hp <= 0) {
+      target.hp = 0;
+      updateTowerHP(target);
+      if (target.type === 'princess') {
+        const prefix = target.side === 'player' ? 'player' : 'enemy';
+        state.towers[prefix + 'King'].active = true;
+      }
+      if (target.side === 'enemy') {
+        state.playerCrowns++;
+        if (target.type === 'king') state.playerCrowns = 3;
+      } else {
+        state.enemyCrowns++;
+        if (target.type === 'king') state.enemyCrowns = 3;
+      }
+      renderCrowns();
+      if (state.playerCrowns >= 3 || state.enemyCrowns >= 3) {
+        endGame();
+      }
+    } else {
+      updateTowerHP(target);
+    }
+  }
+}
+
+function updateTroops() {
+  for (let i = state.troops.length - 1; i >= 0; i--) {
+    const troop = state.troops[i];
+    if (troop.hp <= 0) {
+      troop.el.remove();
+      state.troops.splice(i, 1);
+      continue;
+    }
+    const hpFill = troop.el.querySelector('.troop-hp-fill');
+    if (hpFill) hpFill.style.width = Math.max(0, troop.hp / troop.maxHp * 100) + '%';
+
+    const target = findTarget(troop);
+    if (!target) {
+      const kingKey = troop.side === 'player' ? 'enemyKing' : 'playerKing';
+      const king = state.towers[kingKey];
+      moveToward(troop, king.x, king.y);
+    } else {
+      const d = dist(troop, target);
+      if (d <= troop.range) {
+        if (troop.atkCd <= 0) {
+          troop.atkCd = troop.atkSpeed;
+          if (troop.type === 'ranged') {
+            spawnProjectile(troop, target, troop.dmg, troop.splash, troop.side, troop.isHero, troop.lightning);
+          } else {
+            applyDamage(target.ref, troop.dmg, troop.splash, troop.side);
+          }
+        }
+      } else {
+        moveToward(troop, target.x, target.y);
+      }
+    }
+    if (troop.atkCd > 0) troop.atkCd--;
+
+    troop.x = Math.max(troop.size/2, Math.min(ARENA_W - troop.size/2, troop.x));
+    troop.y = Math.max(troop.size/2, Math.min(ARENA_H - troop.size/2, troop.y));
+
+    troop.el.style.left = (troop.x - troop.size/2) + 'px';
+    troop.el.style.top = (troop.y - troop.size/2) + 'px';
+  }
+}
+
+function moveToward(troop, tx, ty) {
+  const dx = tx - troop.x, dy = ty - troop.y;
+  const d = Math.sqrt(dx*dx + dy*dy);
+  if (d < 1) return;
+
+  let mx = dx/d * troop.speed;
+  let my = dy/d * troop.speed;
+
+  // Flying troops skip bridges entirely
+  if (troop.flying) {
+    troop.x += mx;
+    troop.y += my;
+    return;
+  }
+
+  // Bridge constraint
+  const riverTop = ARENA_H * 0.47;
+  const riverBot = ARENA_H * 0.53;
+  const bridgeLeft = 85, bridgeRight = 335;
+  const bridgeHalfW = 32;
+
+  const willCross = (troop.y < riverTop && ty > riverBot) || (troop.y > riverBot && ty < riverTop);
+  const inRiverZone = troop.y > (riverTop - 10) && troop.y < (riverBot + 10);
+
+  if (willCross || inRiverZone) {
+    const onBridge = (Math.abs(troop.x - bridgeLeft) < bridgeHalfW) ||
+                     (Math.abs(troop.x - bridgeRight) < bridgeHalfW);
+    if (!onBridge) {
+      // Head toward nearest bridge first
+      const nearBridge = Math.abs(troop.x - bridgeLeft) < Math.abs(troop.x - bridgeRight) ? bridgeLeft : bridgeRight;
+      const bdx = nearBridge - troop.x;
+      const abd = Math.abs(bdx);
+      if (abd > 3) {
+        mx = (bdx / abd) * troop.speed;
+        // Also move slightly toward river to not stall
+        my = (ty < troop.y ? -0.2 : 0.2) * troop.speed;
+      } else {
+        // Close enough horizontally, go through
+        mx = 0;
+        my = (ty < troop.y ? -1 : 1) * troop.speed;
+      }
+    }
+    // On bridge: allow normal movement through
+  }
+
+  troop.x += mx;
+  troop.y += my;
+}
+
+function updateTowerAttacks() {
+  for (const t of Object.values(state.towers)) {
+    if (t.hp <= 0 || !t.active) continue;
+    const target = findTowerTarget(t);
+    if (target) {
+      if (t.atkCd <= 0) {
+        t.atkCd = TOWER_ATK_SPEED;
+        spawnProjectile(t, target, t.dmg, 0, t.side);
+      }
+    }
+    if (t.atkCd > 0) t.atkCd--;
+  }
+}
+
+// ============ BOT AI ============
+function botAI() {
+  state.botTimer--;
+  if (state.botTimer > 0) return;
+
+  const minWait = state.overtime ? 20 : 40;
+  const maxWait = state.overtime ? 50 : 90;
+
+  const affordable = state.botHand
+    .map((c, i) => ({ key: c, index: i, def: CARD_DEFS[c] }))
+    .filter(c => c.key && state.botElixir >= c.def.cost);
+
+  if (affordable.length === 0) {
+    state.botTimer = 30;
+    return;
+  }
+
+  const threatTroops = state.troops.filter(t => t.side === 'player' && t.y < ARENA_H * 0.5);
+  let cardToPlay;
+
+  if (threatTroops.length > 0) {
+    cardToPlay = affordable.sort((a, b) => b.def.cost - a.def.cost)[0];
+  } else {
+    cardToPlay = affordable[Math.floor(Math.random() * affordable.length)];
+  }
+
+  let spawnX, spawnY;
+  if (threatTroops.length > 0) {
+    const threat = threatTroops[0];
+    spawnX = threat.x + (Math.random() * 40 - 20);
+    spawnY = Math.max(30, threat.y - 40);
+  } else {
+    spawnX = Math.random() > 0.5 ? 100 + Math.random() * 40 : 280 + Math.random() * 40;
+    spawnY = 80 + Math.random() * 40;
+  }
+
+  spawnX = Math.max(30, Math.min(ARENA_W - 30, spawnX));
+  spawnY = Math.max(20, Math.min(ARENA_H * 0.44, spawnY));
+
+  state.botElixir -= cardToPlay.def.cost;
+  spawnTroop(cardToPlay.key, spawnX, spawnY, 'enemy');
+
+  const idx = cardToPlay.index;
+  const oldCard = state.botHand[idx];
+  state.botHand[idx] = state.botNext;
+  state.botDeck.push(oldCard);
+  state.botNext = state.botDeck.shift();
+
+  state.botTimer = minWait + Math.floor(Math.random() * (maxWait - minWait));
+}
+
+// ============ INPUT: DRAG & DROP + CLICK ============
+function getArenaPos(clientX, clientY) {
+  const rect = arena.getBoundingClientRect();
+  return { x: clientX - rect.left, y: clientY - rect.top };
+}
+
+function getCardIndexFromEvent(e) {
+  const cardEl = e.target.closest('.card');
+  if (!cardEl || cardEl.classList.contains('disabled')) return -1;
+  return parseInt(cardEl.dataset.index);
+}
+
+// Show/hide spawn indicator
+function updateSpawnIndicator(arenaX, arenaY, valid) {
+  if (!spawnIndicator) {
+    spawnIndicator = document.createElement('div');
+    spawnIndicator.className = 'spawn-indicator';
+    arena.appendChild(spawnIndicator);
+  }
+  const size = 40;
+  spawnIndicator.style.width = size + 'px';
+  spawnIndicator.style.height = size + 'px';
+  spawnIndicator.style.left = (arenaX - size/2) + 'px';
+  spawnIndicator.style.top = (arenaY - size/2) + 'px';
+  spawnIndicator.style.display = 'block';
+  spawnIndicator.classList.toggle('invalid', !valid);
+}
+
+function hideSpawnIndicator() {
+  if (spawnIndicator) { spawnIndicator.style.display = 'none'; }
+}
+
+function showDeployZone(show) {
+  document.getElementById('deploy-zone').classList.toggle('active', show);
+}
+
+// --- Mouse events ---
+let mouseDownOnCard = false;
+let mouseStartX = 0, mouseStartY = 0;
+
+cardHandEl.addEventListener('mousedown', (e) => {
+  if (!state || !state.running) return;
+  const idx = getCardIndexFromEvent(e);
+  if (idx < 0) return;
+  mouseDownOnCard = true;
+  mouseStartX = e.clientX;
+  mouseStartY = e.clientY;
+  dragCardIndex = idx;
+  e.preventDefault();
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!state || !state.running) return;
+
+  // Start drag if moved enough
+  if (mouseDownOnCard && !dragging) {
+    const dx = e.clientX - mouseStartX, dy = e.clientY - mouseStartY;
+    if (Math.sqrt(dx*dx + dy*dy) > 8) {
+      dragging = true;
+      const cardKey = state.playerHand[dragCardIndex];
+      const cDef = CARD_DEFS[cardKey];
+      if (cDef.isHero) { dragGhost.innerHTML = `<img src="${HERO_AVATAR}" style="width:40px;height:40px;border-radius:50%;border:2px solid #FFD700;">`; }
+      else if (cDef.isHero2) { dragGhost.innerHTML = `<img src="${HERO2_AVATAR}" style="width:40px;height:40px;border-radius:50%;border:2px solid #9C27B0;">`; }
+      else { dragGhost.textContent = cDef.icon; }
+      dragGhost.style.display = 'block';
+      showDeployZone(true);
+      renderCards();
+    }
+  }
+
+  if (dragging) {
+    dragGhost.style.left = e.clientX + 'px';
+    dragGhost.style.top = e.clientY + 'px';
+    const pos = getArenaPos(e.clientX, e.clientY);
+    const valid = pos.y >= DEPLOY_MIN_Y && pos.x >= 0 && pos.x <= ARENA_W && pos.y <= ARENA_H;
+    if (pos.y > 0 && pos.y < ARENA_H) {
+      updateSpawnIndicator(pos.x, Math.max(DEPLOY_MIN_Y, pos.y), valid);
+    } else {
+      hideSpawnIndicator();
+    }
+  }
+
+  // Show indicator when card is selected (click mode) and hovering arena
+  if (!dragging && selectedCard !== null) {
+    const pos = getArenaPos(e.clientX, e.clientY);
+    const valid = pos.y >= DEPLOY_MIN_Y && pos.x >= 0 && pos.x <= ARENA_W && pos.y <= ARENA_H;
+    if (pos.x >= 0 && pos.x <= ARENA_W && pos.y >= 0 && pos.y <= ARENA_H) {
+      updateSpawnIndicator(pos.x, Math.max(DEPLOY_MIN_Y, pos.y), valid);
+      showDeployZone(true);
+    } else {
+      hideSpawnIndicator();
+    }
+  }
+});
+
+document.addEventListener('mouseup', (e) => {
+  if (dragging) {
+    const pos = getArenaPos(e.clientX, e.clientY);
+    if (pos.y >= DEPLOY_MIN_Y && pos.x >= 0 && pos.x <= ARENA_W) {
+      deployCard(dragCardIndex, pos.x, pos.y);
+    }
+    // Reset drag
+    dragging = false;
+    dragGhost.style.display = 'none';
+    dragCardIndex = null;
+    hideSpawnIndicator();
+    showDeployZone(false);
+    renderCards();
+  } else if (mouseDownOnCard && !dragging) {
+    // It was a click, not a drag — toggle card selection
+    const idx = dragCardIndex;
+    if (selectedCard === idx) {
+      selectedCard = null;
+      showDeployZone(false);
+    } else {
+      selectedCard = idx;
+      showDeployZone(true);
+    }
+    hideSpawnIndicator();
+    renderCards();
+  }
+  mouseDownOnCard = false;
+});
+
+// Click on arena to deploy selected card
+arena.addEventListener('click', (e) => {
+  if (selectedCard === null || !state || !state.running) return;
+  if (dragging) return;
+  const pos = getArenaPos(e.clientX, e.clientY);
+  if (deployCard(selectedCard, pos.x, pos.y)) {
+    hideSpawnIndicator();
+    showDeployZone(false);
+  }
+});
+
+// --- Touch events ---
+let touchCardIndex = -1;
+let touchStartX = 0, touchStartY = 0;
+let touchDragging = false;
+
+cardHandEl.addEventListener('touchstart', (e) => {
+  if (!state || !state.running) return;
+  const touch = e.touches[0];
+  const idx = getCardIndexFromEvent(touch);
+  if (idx < 0) return;
+  touchCardIndex = idx;
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+  touchDragging = false;
+  e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('touchmove', (e) => {
+  if (touchCardIndex < 0) return;
+  const touch = e.touches[0];
+
+  if (!touchDragging) {
+    const dx = touch.clientX - touchStartX, dy = touch.clientY - touchStartY;
+    if (Math.sqrt(dx*dx + dy*dy) > 8) {
+      touchDragging = true;
+      dragCardIndex = touchCardIndex;
+      const cardKey = state.playerHand[dragCardIndex];
+      const tDef = CARD_DEFS[cardKey];
+      if (tDef.isHero) { dragGhost.innerHTML = `<img src="${HERO_AVATAR}" style="width:40px;height:40px;border-radius:50%;border:2px solid #FFD700;">`; }
+      else if (tDef.isHero2) { dragGhost.innerHTML = `<img src="${HERO2_AVATAR}" style="width:40px;height:40px;border-radius:50%;border:2px solid #9C27B0;">`; }
+      else { dragGhost.textContent = tDef.icon; }
+      dragGhost.style.display = 'block';
+      showDeployZone(true);
+      renderCards();
+    }
+  }
+
+  if (touchDragging) {
+    dragGhost.style.left = touch.clientX + 'px';
+    dragGhost.style.top = touch.clientY + 'px';
+    const pos = getArenaPos(touch.clientX, touch.clientY);
+    const valid = pos.y >= DEPLOY_MIN_Y && pos.x >= 0 && pos.x <= ARENA_W && pos.y <= ARENA_H;
+    if (pos.y > 0 && pos.y < ARENA_H) {
+      updateSpawnIndicator(pos.x, Math.max(DEPLOY_MIN_Y, pos.y), valid);
+    } else {
+      hideSpawnIndicator();
+    }
+    e.preventDefault();
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', (e) => {
+  if (touchCardIndex < 0) return;
+
+  if (touchDragging) {
+    const touch = e.changedTouches[0];
+    const pos = getArenaPos(touch.clientX, touch.clientY);
+    if (pos.y >= DEPLOY_MIN_Y && pos.x >= 0 && pos.x <= ARENA_W) {
+      deployCard(dragCardIndex, pos.x, pos.y);
+    }
+    touchDragging = false;
+    dragGhost.style.display = 'none';
+    dragCardIndex = null;
+    hideSpawnIndicator();
+    showDeployZone(false);
+    renderCards();
+  } else {
+    // Tap on card = select it
+    if (selectedCard === touchCardIndex) {
+      selectedCard = null;
+      showDeployZone(false);
+    } else {
+      selectedCard = touchCardIndex;
+      showDeployZone(true);
+    }
+    renderCards();
+  }
+  touchCardIndex = -1;
+});
+
+// Touch tap on arena to deploy selected card
+arena.addEventListener('touchend', (e) => {
+  if (selectedCard === null || !state || !state.running) return;
+  if (touchDragging) return;
+  const touch = e.changedTouches[0];
+  const pos = getArenaPos(touch.clientX, touch.clientY);
+  if (deployCard(selectedCard, pos.x, pos.y)) {
+    hideSpawnIndicator();
+    showDeployZone(false);
+  }
+});
+
+// ============ GAME LOOP ============
+function gameLoop() {
+  if (!state || !state.running) return;
+  state.frameCount++;
+
+  // Timer
+  if (state.frameCount % 60 === 0) {
+    state.time--;
+    const timerEl = document.getElementById('timer');
+    if (state.time <= 0 && !state.overtime) {
+      if (state.playerCrowns === state.enemyCrowns) {
+        state.overtime = true;
+        state.time = OVERTIME_DURATION;
+        timerEl.classList.add('overtime');
+      } else {
+        endGame(); return;
+      }
+    } else if (state.time <= 0 && state.overtime) {
+      endGame(); return;
+    }
+    const min = Math.floor(state.time / 60);
+    const sec = state.time % 60;
+    timerEl.textContent = (state.overtime ? 'OT ' : '') + `${min}:${sec.toString().padStart(2, '0')}`;
+  }
+
+  // Elixir
+  const rate = state.overtime ? ELIXIR_RATE_OT : ELIXIR_RATE;
+  state.elixir = Math.min(ELIXIR_MAX, state.elixir + rate);
+  state.botElixir = Math.min(ELIXIR_MAX, state.botElixir + rate);
+
+  // Update
+  updateTroops();
+  updateTowerAttacks();
+  updateProjectiles();
+  botAI();
+
+  if (state.frameCount % 6 === 0) renderCards();
+
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+// ============ START / END ============
+function startGame() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  state = initState();
+  document.querySelectorAll('.troop, .projectile, .damage-number').forEach(e => e.remove());
+  hideSpawnIndicator();
+  showDeployZone(false);
+  selectedCard = null;
+  dragging = false;
+  dragGhost.style.display = 'none';
+
+  renderTowers();
+  renderCards();
+  renderCrowns();
+
+  document.getElementById('timer').textContent = '3:00';
+  document.getElementById('timer').classList.remove('overtime');
+  document.getElementById('overlay').classList.add('hidden');
+
+  // Hide hint after 4 seconds
+  const hint = document.getElementById('deploy-hint');
+  hint.style.opacity = '1';
+  setTimeout(() => { hint.style.opacity = '0'; }, 4000);
+
+  state.running = true;
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+function endGame() {
+  state.running = false;
+  if (animFrame) cancelAnimationFrame(animFrame);
+
+  const overlay = document.getElementById('overlay');
+  overlay.classList.remove('hidden');
+
+  let result, color;
+  if (state.playerCrowns > state.enemyCrowns) {
+    result = 'VICTORY!'; color = '#4CAF50';
+  } else if (state.playerCrowns < state.enemyCrowns) {
+    result = 'DEFEAT'; color = '#f44336';
+  } else {
+    result = 'DRAW'; color = '#ff9800';
+  }
+
+  overlay.innerHTML = `
+    <div class="result-text" style="color:${color}">${result}</div>
+    <div id="crown-display">
+      <span style="color:#2196F3">You ${state.playerCrowns}★</span>
+      &nbsp;vs&nbsp;
+      <span style="color:#f44336">${state.enemyCrowns}★ Bot</span>
+    </div>
+    <h2 style="margin-top:10px;color:#ccc">Crowns: ${state.playerCrowns} - ${state.enemyCrowns}</h2>
+    <button class="btn btn-play" onclick="startGame()" style="margin-top:20px">PLAY AGAIN</button>
+  `;
+}
+
+// Init
+renderCrowns();
+</script>
+</body>
+</html>

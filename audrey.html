@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audrey's Bluey World!</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(135deg, #87CEEB 0%, #B0E2FF 50%, #E0F4FF 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .paws { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:hidden; }
+    .paw  { position:absolute; opacity:0.15; animation: floatUp linear infinite; }
+
+    @keyframes floatUp {
+      0%   { transform: translateY(110vh) rotate(0deg);   opacity: 0; }
+      10%  { opacity: 0.15; }
+      90%  { opacity: 0.15; }
+      100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+    }
+
+    header {
+      position: relative; z-index:1;
+      text-align: center; padding: 40px 20px 20px;
+    }
+
+    .title-banner {
+      background: #1B6CA8; display:inline-block;
+      padding: 18px 48px; border-radius: 60px;
+      box-shadow: 0 8px 0 #0d4a7a, 0 12px 20px rgba(0,0,0,0.2);
+      animation: bounce 2s ease-in-out infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-8px); }
+    }
+    .title-banner h1 {
+      font-size: clamp(2rem,6vw,4rem); font-weight:900;
+      color: #FFE066; text-shadow: 3px 3px 0 #c9a800; letter-spacing:2px;
+    }
+    .subtitle {
+      margin-top:16px; font-size: clamp(1.2rem,3vw,1.8rem);
+      font-weight:700; color:#1B6CA8; text-shadow:1px 1px 0 #fff;
+    }
+
+    .section {
+      position:relative; z-index:1;
+      max-width:960px; margin:30px auto; padding:0 20px;
+    }
+    .section-title {
+      text-align:center; font-size: clamp(1.4rem,4vw,2.2rem);
+      font-weight:900; color:#1B6CA8; margin-bottom:24px; text-shadow:2px 2px 0 #fff;
+    }
+
+    /* Family SVG card */
+    .family-card {
+      background:white; border-radius:24px; padding:20px;
+      box-shadow: 0 6px 0 #ddd, 0 10px 20px rgba(0,0,0,0.1);
+      overflow:hidden; text-align:center;
+    }
+    .family-card svg { max-width:100%; display:block; margin:0 auto; }
+
+    /* Characters */
+    .characters { display:flex; flex-wrap:wrap; gap:20px; justify-content:center; }
+    .character-card {
+      background:white; border-radius:24px; padding:24px 20px;
+      width:180px; text-align:center;
+      box-shadow: 0 6px 0 #ccc, 0 10px 20px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s; cursor:default;
+    }
+    .character-card:hover {
+      transform: translateY(-6px) scale(1.04);
+      box-shadow: 0 12px 0 #aaa, 0 16px 30px rgba(0,0,0,0.15);
+    }
+    .character-emoji { font-size:4rem; display:block; margin-bottom:10px; }
+    .character-name  { font-size:1.2rem; font-weight:900; margin-bottom:6px; }
+    .character-desc  { font-size:0.85rem; color:#555; line-height:1.4; }
+    .bluey  .character-name { color:#1B6CA8; }
+    .bingo  .character-name { color:#E8622A; }
+    .bandit .character-name { color:#4A90D9; }
+    .chilli .character-name { color:#C0392B; }
+    .judo   .character-name { color:#8E44AD; }
+    .chloe  .character-name { color:#2ECC71; }
+
+    /* Fun facts */
+    .facts-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:20px; }
+    .fact-card {
+      background:white; border-radius:20px; padding:22px;
+      box-shadow: 0 4px 0 #ddd, 0 8px 16px rgba(0,0,0,0.08);
+      transition: transform 0.2s;
+    }
+    .fact-card:hover { transform:translateY(-4px); }
+    .fact-icon  { font-size:2.2rem; margin-bottom:10px; }
+    .fact-title { font-size:1.05rem; font-weight:900; color:#1B6CA8; margin-bottom:6px; }
+    .fact-text  { font-size:0.9rem; color:#444; line-height:1.5; }
+
+    /* Games */
+    .games-box {
+      background:white; border-radius:24px; padding:30px;
+      box-shadow: 0 6px 0 #ddd, 0 10px 20px rgba(0,0,0,0.1);
+      text-align:center;
+    }
+    .game-btn {
+      display:inline-block; margin:10px; padding:14px 28px;
+      background:#1B6CA8; color:white;
+      font-family:'Nunito',sans-serif; font-size:1.1rem; font-weight:800;
+      border:none; border-radius:50px; cursor:pointer;
+      box-shadow: 0 5px 0 #0d4a7a;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .game-btn:active { transform:translateY(4px); box-shadow:0 1px 0 #0d4a7a; }
+    .game-btn.orange { background:#E8622A; box-shadow:0 5px 0 #b04820; }
+    .game-btn.orange:active { box-shadow:0 1px 0 #b04820; }
+    .game-btn.yellow { background:#F0B800; color:#333; box-shadow:0 5px 0 #b58a00; }
+    .game-btn.yellow:active { box-shadow:0 1px 0 #b58a00; }
+
+    #trivia-box { margin-top:20px; min-height:80px; display:none; }
+    #trivia-question { font-size:1.15rem; font-weight:700; color:#1B6CA8; margin-bottom:16px; }
+    .trivia-choices { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+    .choice-btn {
+      padding:10px 20px; background:#f0f8ff;
+      border:3px solid #1B6CA8; border-radius:30px;
+      font-family:'Nunito',sans-serif; font-size:1rem; font-weight:700;
+      color:#1B6CA8; cursor:pointer; transition: background 0.2s, color 0.2s;
+    }
+    .choice-btn:hover { background:#1B6CA8; color:white; }
+    #trivia-result { margin-top:14px; font-size:1.2rem; font-weight:900; min-height:32px; }
+
+    #dance-box { margin-top:20px; font-size:2.5rem; letter-spacing:8px; min-height:60px; }
+    .dancing { animation: wiggle 0.3s ease-in-out infinite alternate; display:inline-block; }
+    @keyframes wiggle {
+      from { transform: rotate(-10deg) scale(1); }
+      to   { transform: rotate(10deg)  scale(1.2); }
+    }
+
+    /* Music button */
+    #music-btn {
+      position:fixed; bottom:24px; right:24px; z-index:100;
+      background:#1B6CA8; color:white; border:none; border-radius:50px;
+      padding:14px 22px; font-family:'Nunito',sans-serif;
+      font-size:1rem; font-weight:800; cursor:pointer;
+      box-shadow: 0 5px 0 #0d4a7a, 0 8px 20px rgba(0,0,0,0.25);
+      transition: transform 0.1s, background 0.3s, box-shadow 0.1s;
+    }
+    #music-btn:active { transform:translateY(3px); box-shadow:0 2px 0 #0d4a7a; }
+    #music-btn.playing { background:#E8622A; box-shadow:0 5px 0 #b04820, 0 8px 20px rgba(0,0,0,0.25); }
+    #music-btn.playing:active { box-shadow:0 2px 0 #b04820; }
+
+    footer {
+      position:relative; z-index:1;
+      text-align:center; padding:30px 20px 80px;
+      font-size:1rem; color:#1B6CA8; font-weight:700;
+    }
+    footer span { font-size:1.3rem; }
+
+    /* ── Keepy Uppy Modal ── */
+    .ku-overlay {
+      display:none;
+      position:fixed; inset:0; z-index:500;
+      background:rgba(10,30,60,0.82);
+      backdrop-filter:blur(4px);
+      align-items:center; justify-content:center;
+    }
+    .ku-overlay.open { display:flex; }
+
+    .ku-modal {
+      background:white;
+      border-radius:28px;
+      overflow:hidden;
+      box-shadow:0 16px 0 #0d4a7a, 0 24px 50px rgba(0,0,0,0.4);
+      width:min(420px, 95vw);
+      animation:kuPop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+      position:relative;
+    }
+    @keyframes kuPop {
+      from { transform:scale(0.4) translateY(60px); opacity:0; }
+      to   { transform:scale(1)   translateY(0);    opacity:1; }
+    }
+
+    .ku-header {
+      background:#1B6CA8;
+      padding:16px 24px;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .ku-title {
+      font-size:1.4rem; font-weight:900;
+      color:#FFE066; text-shadow:2px 2px 0 #c9a800;
+    }
+    .ku-close {
+      background:rgba(255,255,255,0.2);
+      border:2px solid rgba(255,255,255,0.4);
+      border-radius:50%; width:36px; height:36px;
+      color:white; font-size:1.1rem; font-weight:900;
+      cursor:pointer; line-height:1;
+      display:flex; align-items:center; justify-content:center;
+      transition:background 0.15s;
+    }
+    .ku-close:hover { background:rgba(255,255,255,0.35); }
+
+    .ku-body {
+      padding:16px;
+      display:flex; flex-direction:column; align-items:center; gap:12px;
+    }
+
+    #ku-canvas {
+      border-radius:16px;
+      border:3px solid #e0eef8;
+      cursor:pointer;
+      touch-action:none;
+      display:block;
+    }
+
+    .ku-hud {
+      display:flex; gap:14px; flex-wrap:wrap; justify-content:center;
+    }
+    .ku-pill {
+      background:#f0f8ff; border-radius:30px;
+      padding:7px 18px; font-size:1rem; font-weight:800;
+      color:#1B6CA8; border:2px solid #c8e0f8;
+    }
+    .ku-pill span { color:#E8622A; }
+
+  </style>
+</head>
+<body>
+
+  <div class="paws" id="paws"></div>
+
+  <header>
+    <div class="title-banner">
+      <h1>🐾 Audrey's Bluey World! 🐾</h1>
+    </div>
+    <p class="subtitle">Welcome, Audrey! Let's play! 🎉</p>
+  </header>
+
+  <!-- Heeler Family Picture -->
+  <div class="section">
+    <h2 class="section-title">🏠 The Heeler Family!</h2>
+    <div class="family-card">
+      <svg viewBox="0 0 800 295" xmlns="http://www.w3.org/2000/svg" width="800">
+        <defs>
+          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#5BB8F5"/>
+            <stop offset="100%" stop-color="#C8EAFF"/>
+          </linearGradient>
+          <linearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#6DD46D"/>
+            <stop offset="100%" stop-color="#4AA84A"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Sky -->
+        <rect width="800" height="295" fill="url(#skyGrad)"/>
+
+        <!-- Sun -->
+        <circle cx="740" cy="52" r="32" fill="#FFD700" opacity="0.95"/>
+        <g stroke="#FFD700" stroke-width="3.5" opacity="0.65" stroke-linecap="round">
+          <line x1="740" y1="8"  x2="740" y2="22"/>
+          <line x1="740" y1="82" x2="740" y2="96"/>
+          <line x1="696" y1="52" x2="710" y2="52"/>
+          <line x1="770" y1="52" x2="784" y2="52"/>
+          <line x1="711" y1="23" x2="721" y2="33"/>
+          <line x1="769" y1="23" x2="759" y2="33"/>
+          <line x1="711" y1="81" x2="721" y2="71"/>
+          <line x1="769" y1="81" x2="759" y2="71"/>
+        </g>
+
+        <!-- Clouds -->
+        <g fill="white" opacity="0.88">
+          <ellipse cx="108" cy="62" rx="52" ry="26"/>
+          <ellipse cx="145" cy="54" rx="40" ry="22"/>
+          <ellipse cx="75"  cy="58" rx="34" ry="18"/>
+
+          <ellipse cx="410" cy="48" rx="46" ry="23"/>
+          <ellipse cx="448" cy="40" rx="36" ry="20"/>
+          <ellipse cx="378" cy="44" rx="30" ry="17"/>
+        </g>
+
+        <!-- Ground -->
+        <rect x="0" y="248" width="800" height="47" fill="url(#grassGrad)"/>
+        <rect x="0" y="248" width="800" height="14" fill="#7DE07D" rx="0"/>
+        <!-- Grass tufts -->
+        <g fill="#5CC85C" stroke="#4AA84A" stroke-width="1">
+          <ellipse cx="40"  cy="249" rx="12" ry="5"/>
+          <ellipse cx="200" cy="249" rx="10" ry="4"/>
+          <ellipse cx="350" cy="249" rx="13" ry="5"/>
+          <ellipse cx="500" cy="249" rx="11" ry="4"/>
+          <ellipse cx="660" cy="249" rx="12" ry="5"/>
+          <ellipse cx="770" cy="249" rx="9"  ry="4"/>
+        </g>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--  BANDIT (Dad) — dark blue, x=111       -->
+        <!-- ═══════════════════════════════════════ -->
+        <!-- Tail -->
+        <path d="M 148 200 Q 178 176 170 152" stroke="#1B5EA8" stroke-width="13" fill="none" stroke-linecap="round"/>
+        <!-- Left arm -->
+        <path d="M 84 205 Q 58 196 52 218" stroke="#1B5EA8" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <!-- Body -->
+        <rect x="80" y="183" width="62" height="48" rx="16" fill="#1B5EA8"/>
+        <!-- Belly -->
+        <ellipse cx="111" cy="207" rx="20" ry="16" fill="#7AAED8"/>
+        <!-- Legs -->
+        <rect x="86"  y="228" width="17" height="24" rx="8" fill="#1B5EA8"/>
+        <rect x="110" y="228" width="17" height="24" rx="8" fill="#1B5EA8"/>
+        <!-- Feet -->
+        <ellipse cx="95"  cy="252" rx="13" ry="7" fill="#144A8A"/>
+        <ellipse cx="119" cy="252" rx="13" ry="7" fill="#144A8A"/>
+        <!-- Head -->
+        <circle cx="111" cy="152" r="42" fill="#1B5EA8"/>
+        <!-- Ears -->
+        <polygon points="76,128 66,90  91,114" fill="#1B5EA8"/>
+        <polygon points="146,128 156,90 131,114" fill="#1B5EA8"/>
+        <polygon points="79,126 71,96  91,114" fill="#4A88C0"/>
+        <polygon points="143,126 151,96 131,114" fill="#4A88C0"/>
+        <!-- Face patch -->
+        <ellipse cx="111" cy="164" rx="28" ry="24" fill="#7AAED8"/>
+        <!-- Eyes -->
+        <circle cx="96"  cy="144" r="10" fill="white"/>
+        <circle cx="126" cy="144" r="10" fill="white"/>
+        <circle cx="97"  cy="145" r="5.5" fill="#111"/>
+        <circle cx="127" cy="145" r="5.5" fill="#111"/>
+        <circle cx="99"  cy="143" r="2.2" fill="white"/>
+        <circle cx="129" cy="143" r="2.2" fill="white"/>
+        <!-- Nose -->
+        <ellipse cx="111" cy="160" rx="8" ry="5.5" fill="#0a0a1a"/>
+        <!-- Smile -->
+        <path d="M 100 167 Q 111 176 122 167" stroke="#2a2a2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <!-- Name -->
+        <text x="111" y="274" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="white">Bandit (Dad)</text>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--  CHILLI (Mum) — auburn, x=278          -->
+        <!-- ═══════════════════════════════════════ -->
+        <path d="M 306 202 Q 334 180 326 158" stroke="#A04B1E" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <path d="M 250 205 Q 226 195 220 216" stroke="#A04B1E" stroke-width="11" fill="none" stroke-linecap="round"/>
+        <rect x="248" y="187" width="58" height="44" rx="15" fill="#A04B1E"/>
+        <ellipse cx="277" cy="209" rx="18" ry="15" fill="#CC8060"/>
+        <rect x="253" y="228" width="16" height="22" rx="7" fill="#A04B1E"/>
+        <rect x="276" y="228" width="16" height="22" rx="7" fill="#A04B1E"/>
+        <ellipse cx="261" cy="252" rx="12" ry="6.5" fill="#7A360E"/>
+        <ellipse cx="284" cy="252" rx="12" ry="6.5" fill="#7A360E"/>
+        <circle cx="277" cy="156" r="38" fill="#A04B1E"/>
+        <polygon points="244,133 235,97  258,117" fill="#A04B1E"/>
+        <polygon points="310,133 319,97 296,117" fill="#A04B1E"/>
+        <polygon points="247,131 239,102 258,117" fill="#C07050"/>
+        <polygon points="307,131 315,102 296,117" fill="#C07050"/>
+        <ellipse cx="277" cy="167" rx="25" ry="21" fill="#CC8060"/>
+        <circle cx="264" cy="148" r="9"   fill="white"/>
+        <circle cx="290" cy="148" r="9"   fill="white"/>
+        <circle cx="265" cy="149" r="5"   fill="#111"/>
+        <circle cx="291" cy="149" r="5"   fill="#111"/>
+        <circle cx="267" cy="147" r="2"   fill="white"/>
+        <circle cx="293" cy="147" r="2"   fill="white"/>
+        <ellipse cx="277" cy="163" rx="7" ry="5" fill="#0a0a1a"/>
+        <path d="M 268 170 Q 277 178 286 170" stroke="#2a2a2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <text x="277" y="274" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="white">Chilli (Mum)</text>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--  BLUEY — blue, x=460                   -->
+        <!-- ═══════════════════════════════════════ -->
+        <path d="M 488 204 Q 513 184 506 163" stroke="#3B7DD8" stroke-width="11" fill="none" stroke-linecap="round"/>
+        <path d="M 432 206 Q 410 197 404 217" stroke="#3B7DD8" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <rect x="432" y="190" width="56" height="42" rx="14" fill="#3B7DD8"/>
+        <ellipse cx="460" cy="211" rx="17" ry="14" fill="#88BBEE"/>
+        <rect x="436" y="229" width="15" height="22" rx="7" fill="#3B7DD8"/>
+        <rect x="458" y="229" width="15" height="22" rx="7" fill="#3B7DD8"/>
+        <ellipse cx="444" cy="252" rx="12" ry="6"   fill="#2260B0"/>
+        <ellipse cx="466" cy="252" rx="12" ry="6"   fill="#2260B0"/>
+        <circle cx="460" cy="162" r="34" fill="#3B7DD8"/>
+        <polygon points="430,141 422,108 444,125" fill="#3B7DD8"/>
+        <polygon points="490,141 498,108 476,125" fill="#3B7DD8"/>
+        <polygon points="433,139 426,112 444,125" fill="#60A0E8"/>
+        <polygon points="487,139 494,112 476,125" fill="#60A0E8"/>
+        <ellipse cx="460" cy="172" rx="22" ry="19" fill="#88BBEE"/>
+        <circle cx="449" cy="155" r="8.5" fill="white"/>
+        <circle cx="471" cy="155" r="8.5" fill="white"/>
+        <circle cx="450" cy="156" r="4.8" fill="#111"/>
+        <circle cx="472" cy="156" r="4.8" fill="#111"/>
+        <circle cx="452" cy="154" r="1.9" fill="white"/>
+        <circle cx="474" cy="154" r="1.9" fill="white"/>
+        <ellipse cx="460" cy="169" rx="6.5" ry="4.5" fill="#0a0a1a"/>
+        <path d="M 452 175 Q 460 182 468 175" stroke="#2a2a2a" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+        <text x="460" y="274" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="white">Bluey</text>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--  BINGO — orange, x=628 (smallest)      -->
+        <!-- ═══════════════════════════════════════ -->
+        <path d="M 652 207 Q 674 190 668 172" stroke="#D4611A" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <path d="M 604 208 Q 584 200 579 218" stroke="#D4611A" stroke-width="9"  fill="none" stroke-linecap="round"/>
+        <rect x="604" y="196" width="48" height="37" rx="13" fill="#D4611A"/>
+        <ellipse cx="628" cy="215" rx="15" ry="12" fill="#E8936A"/>
+        <rect x="608" y="230" width="13" height="20" rx="6" fill="#D4611A"/>
+        <rect x="627" y="230" width="13" height="20" rx="6" fill="#D4611A"/>
+        <ellipse cx="615" cy="252" rx="10" ry="5.5" fill="#A03D0C"/>
+        <ellipse cx="634" cy="252" rx="10" ry="5.5" fill="#A03D0C"/>
+        <circle cx="628" cy="172" r="29" fill="#D4611A"/>
+        <polygon points="603,153 596,124 616,140" fill="#D4611A"/>
+        <polygon points="653,153 660,124 640,140" fill="#D4611A"/>
+        <polygon points="606,151 599,128 616,140" fill="#E87A40"/>
+        <polygon points="650,151 657,128 640,140" fill="#E87A40"/>
+        <ellipse cx="628" cy="181" rx="19" ry="16" fill="#E8936A"/>
+        <circle cx="618" cy="165" r="7.5" fill="white"/>
+        <circle cx="638" cy="165" r="7.5" fill="white"/>
+        <circle cx="619" cy="166" r="4.2" fill="#111"/>
+        <circle cx="639" cy="166" r="4.2" fill="#111"/>
+        <circle cx="621" cy="164" r="1.7" fill="white"/>
+        <circle cx="641" cy="164" r="1.7" fill="white"/>
+        <ellipse cx="628" cy="178" rx="5.5" ry="4" fill="#0a0a1a"/>
+        <path d="M 621 183 Q 628 190 635 183" stroke="#2a2a2a" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <text x="628" y="274" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="white">Bingo</text>
+
+        <!-- Title inside SVG -->
+        <text x="400" y="292" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.7)">🐾 The Heeler Family 🐾</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Characters -->
+  <div class="section">
+    <h2 class="section-title">🐶 Meet the Heelers!</h2>
+    <div class="characters">
+      <div class="character-card bluey">
+        <span class="character-emoji">💙</span>
+        <div class="character-name">Bluey</div>
+        <div class="character-desc">6 years old, loves to play and uses her imagination!</div>
+      </div>
+      <div class="character-card bingo">
+        <span class="character-emoji">🧡</span>
+        <div class="character-name">Bingo</div>
+        <div class="character-desc">Bluey's little sister. Sweet, funny, and loves games!</div>
+      </div>
+      <div class="character-card bandit">
+        <span class="character-emoji">🎮</span>
+        <div class="character-name">Bandit</div>
+        <div class="character-desc">The fun dad who always joins in with the games!</div>
+      </div>
+      <div class="character-card chilli">
+        <span class="character-emoji">❤️</span>
+        <div class="character-name">Chilli</div>
+        <div class="character-desc">The caring mum who's always there for the family!</div>
+      </div>
+      <div class="character-card judo">
+        <span class="character-emoji">💜</span>
+        <div class="character-name">Judo</div>
+        <div class="character-desc">Bluey's best friend. Playful and adventurous!</div>
+      </div>
+      <div class="character-card chloe">
+        <span class="character-emoji">💚</span>
+        <div class="character-name">Chloe</div>
+        <div class="character-desc">Smart and kind — another great friend to Bluey!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fun Facts -->
+  <div class="section">
+    <h2 class="section-title">🌟 Bluey Fun Facts!</h2>
+    <div class="facts-grid">
+      <div class="fact-card">
+        <div class="fact-icon">🇦🇺</div>
+        <div class="fact-title">From Australia!</div>
+        <div class="fact-text">Bluey is made in Brisbane, Australia. The family lives in a city called Brisbane too!</div>
+      </div>
+      <div class="fact-card">
+        <div class="fact-icon">🐕</div>
+        <div class="fact-title">Blue Heelers</div>
+        <div class="fact-text">The Heeler family are Blue Heeler dogs — a real Australian dog breed known for being smart and active!</div>
+      </div>
+      <div class="fact-card">
+        <div class="fact-icon">🎮</div>
+        <div class="fact-title">Keepy Uppy!</div>
+        <div class="fact-text">One of Bluey's favourite games is "Keepy Uppy" — keeping a balloon in the air!</div>
+      </div>
+      <div class="fact-card">
+        <div class="fact-icon">🏆</div>
+        <div class="fact-title">Award Winner</div>
+        <div class="fact-text">Bluey has won lots of awards and is loved by kids and grown-ups all over the world!</div>
+      </div>
+      <div class="fact-card">
+        <div class="fact-icon">🎵</div>
+        <div class="fact-title">Catchy Music</div>
+        <div class="fact-text">The Bluey theme song is super catchy — da da da da Bluey! Can you sing it?</div>
+      </div>
+      <div class="fact-card">
+        <div class="fact-icon">🌈</div>
+        <div class="fact-title">Every Episode</div>
+        <div class="fact-text">Every Bluey episode has a fun lesson hidden inside — about kindness, feelings, and growing up!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Games -->
+  <div class="section">
+    <h2 class="section-title">🎲 Let's Play!</h2>
+    <div class="games-box">
+      <p style="font-size:1.1rem; color:#555; margin-bottom:18px;">Click a button to play!</p>
+      <button class="game-btn"        onclick="startTrivia()">🧠 Bluey Trivia!</button>
+      <button class="game-btn" style="background:#27ae60;box-shadow:0 5px 0 #1a7a40;" onclick="openKeepyUppy()">🎈 Keepy Uppy!</button>
+      <button class="game-btn" style="background:#DC143C;box-shadow:0 5px 0 #8a000a;" onclick="openGame('🍬 Candy Cane Snake!','candycane.html')">🍬 Candy Cane Snake!</button>
+      <button class="game-btn" style="background:#8E44AD;box-shadow:0 5px 0 #5e2d73;" onclick="openGame('🃏 Memory Snap!','snap.html')">🃏 Memory Snap!</button>
+      <button class="game-btn" style="background:#1a1a2e;box-shadow:0 5px 0 #0a0a15;" onclick="openGame('⚔️ Card Clash!','clash.html')">⚔️ Card Clash!</button>
+      <div id="trivia-box">
+        <div id="trivia-question"></div>
+        <div class="trivia-choices" id="trivia-choices"></div>
+        <div id="trivia-result"></div>
+      </div>
+      <div id="dance-box"></div>
+      <div id="love-box" style="margin-top:20px;font-size:1.3rem;font-weight:800;color:#E8622A;display:none;"></div>
+    </div>
+  </div>
+
+  <footer>
+    <span>🐾</span> Made with love for Audrey <span>🐾</span><br/>
+    <span style="font-size:0.9rem;font-weight:400;color:#555;">Keep playing, keep smiling!</span>
+  </footer>
+
+  <!-- Music button (fixed) -->
+  <button id="music-btn" onclick="toggleMusic()">🎵 Play Music</button>
+
+  <!-- Generic game iframe modal -->
+  <div class="ku-overlay" id="game-overlay" onclick="closeGame(event)">
+    <div class="ku-modal" style="width:min(960px,97vw);">
+      <div class="ku-header">
+        <span class="ku-title" id="game-modal-title">Game</span>
+        <button class="ku-close" onclick="closeGameModal()">✕</button>
+      </div>
+      <div style="padding:0; line-height:0;">
+        <iframe id="game-iframe" src="" style="width:100%;height:min(780px,85vh);border:none;display:block;border-radius:0 0 26px 26px;" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keepy Uppy Modal -->
+  <div class="ku-overlay" id="ku-overlay" onclick="kuOverlayClick(event)">
+    <div class="ku-modal">
+      <div class="ku-header">
+        <span class="ku-title">🎈 Keepy Uppy!</span>
+        <button class="ku-close" onclick="closeKeepyUppy()">✕</button>
+      </div>
+      <div class="ku-body">
+        <div class="ku-hud">
+          <div class="ku-pill">Score: <span id="ku-score">0</span></div>
+          <div class="ku-pill">Best: <span id="ku-best">0</span></div>
+        </div>
+        <canvas id="ku-canvas" width="370" height="430"></canvas>
+        <div style="font-size:0.8rem;color:#888;text-align:center;">
+          Tap anywhere to keep the balloon up! Don't let it hit the ground!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Floating paw prints ───────���──────────────────────────────
+    const pawsContainer = document.getElementById('paws');
+    const pawSymbols = ['🐾','🐾','💙','🧡','⭐','🐾'];
+    for (let i = 0; i < 18; i++) {
+      const paw = document.createElement('div');
+      paw.className = 'paw';
+      paw.textContent = pawSymbols[Math.floor(Math.random() * pawSymbols.length)];
+      paw.style.left = Math.random() * 100 + 'vw';
+      paw.style.animationDuration = (8 + Math.random() * 12) + 's';
+      paw.style.animationDelay = (Math.random() * 15) + 's';
+      paw.style.fontSize = (1 + Math.random() * 2) + 'rem';
+      pawsContainer.appendChild(paw);
+    }
+
+    // ── Trivia ───────────────────────────────────────────────────
+    const triviaData = [
+      { q:"What colour is Bluey?",                       choices:["Blue","Red","Green","Orange"],        answer:0 },
+      { q:"What is Bluey's little sister's name?",       choices:["Judo","Chloe","Bingo","Mia"],         answer:2 },
+      { q:"What is Bluey's dad's name?",                 choices:["Stripe","Bandit","Bob","Jack"],        answer:1 },
+      { q:"What country is Bluey from?",                 choices:["USA","UK","Canada","Australia"],       answer:3 },
+      { q:"What game do the kids play with a balloon?",  choices:["Keepy Uppy","Hopscotch","Tag","Hide & Seek"], answer:0 },
+      { q:"What type of dog is the Heeler family?",      choices:["Dalmatian","Poodle","Blue Heeler","Labrador"], answer:2 },
+      { q:"What is Bluey's mum's name?",                 choices:["Trixie","Chilli","Judo","Nana"],       answer:1 },
+    ];
+    let currentTrivia = null;
+
+    function startTrivia() {
+      document.getElementById('trivia-box').style.display = 'block';
+      document.getElementById('dance-box').innerHTML = '';
+      document.getElementById('love-box').style.display = 'none';
+      currentTrivia = triviaData[Math.floor(Math.random() * triviaData.length)];
+      document.getElementById('trivia-question').textContent = '❓ ' + currentTrivia.q;
+      document.getElementById('trivia-result').textContent = '';
+      const choicesEl = document.getElementById('trivia-choices');
+      choicesEl.innerHTML = '';
+      currentTrivia.choices.forEach((c, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = c;
+        btn.onclick = () => checkAnswer(i, btn);
+        choicesEl.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(idx, btn) {
+      const result = document.getElementById('trivia-result');
+      document.querySelectorAll('.choice-btn').forEach(b => b.style.pointerEvents = 'none');
+      if (idx === currentTrivia.answer) {
+        result.textContent = "🎉 Yay! That's correct! You're a Bluey expert!";
+        result.style.color = '#27ae60';
+        btn.style.background = '#27ae60'; btn.style.color = 'white'; btn.style.borderColor = '#27ae60';
+        playJingle(true);
+      } else {
+        result.textContent = '😅 Oops! The answer was: ' + currentTrivia.choices[currentTrivia.answer] + ' — try again!';
+        result.style.color = '#E8622A';
+        btn.style.background = '#E8622A'; btn.style.color = 'white'; btn.style.borderColor = '#E8622A';
+        playJingle(false);
+      }
+      setTimeout(startTrivia, 2500);
+    }
+
+    // ── Dance Party ──────────────────────────────────────────────
+    const danceEmojis = ['🐾','💙','🧡','⭐','🎉','🕺','💃','🎵','🌟','🐶'];
+    let danceInterval = null;
+
+    function danceParty() {
+      const box = document.getElementById('dance-box');
+      if (danceInterval) {
+        clearInterval(danceInterval); danceInterval = null; box.innerHTML = ''; return;
+      }
+      danceInterval = setInterval(() => {
+        box.innerHTML = '';
+        for (let i = 0; i < 6; i++) {
+          const span = document.createElement('span');
+          span.textContent = danceEmojis[Math.floor(Math.random() * danceEmojis.length)];
+          span.className = 'dancing';
+          span.style.animationDelay = (i * 0.05) + 's';
+          box.appendChild(span);
+        }
+      }, 400);
+    }
+
+    // ── Audrey is Awesome ────────────────────────────────────────
+    const loveMessages = [
+      "💛 Audrey is the most amazing girl in the whole world! 💛",
+      "🌟 You are so smart and so kind, just like Bluey! 🌟",
+      "🐾 Woof woof! You're pawsome, Audrey! 🐾",
+      "💙 Keep playing, keep laughing, keep being YOU! 💙",
+      "🎉 You make every day a Bluey adventure! 🎉",
+      "🧡 Just like Bingo and Bluey, you are one of a kind! 🧡",
+    ];
+    let loveInterval = null;
+
+    function showLove() {
+      const box = document.getElementById('love-box');
+      box.style.display = 'block';
+      box.textContent = loveMessages[Math.floor(Math.random() * loveMessages.length)];
+      if (loveInterval) clearInterval(loveInterval);
+      loveInterval = setInterval(() => {
+        box.textContent = loveMessages[Math.floor(Math.random() * loveMessages.length)];
+      }, 3000);
+    }
+
+    // ── Music (Web Audio API) ────────────────────────────────────
+    let audioCtx     = null;
+    let musicPlaying = false;
+    let nextLoopTimer = null;
+
+    // A cheerful pentatonic melody (G major pentatonic)
+    // [frequency_hz, duration_beats]
+    const melody = [
+      [392.0, 0.5], // G4
+      [493.9, 0.5], // B4
+      [587.3, 0.5], // D5
+      [659.3, 1.0], // E5
+      [587.3, 0.5], // D5
+      [493.9, 0.5], // B4
+      [392.0, 0.75],// G4
+      [440.0, 0.25],// A4
+      [493.9, 0.5], // B4
+      [587.3, 0.75],// D5
+      [493.9, 0.25],// B4
+      [440.0, 0.5], // A4
+      [392.0, 1.5], // G4 hold
+      // bar 2
+      [440.0, 0.5], // A4
+      [493.9, 0.5], // B4
+      [587.3, 0.5], // D5
+      [659.3, 0.75],// E5
+      [784.0, 0.25],// G5
+      [659.3, 0.5], // E5
+      [587.3, 0.5], // D5
+      [493.9, 0.75],// B4
+      [440.0, 0.25],// A4
+      [392.0, 2.0], // G4 hold
+    ];
+
+    // Simple bass line
+    const bass = [
+      [196.0, 2.0], // G3
+      [220.0, 2.0], // A3
+      [196.0, 2.0], // G3
+      [246.9, 2.0], // B3
+      [196.0, 2.0], // G3
+      [220.0, 2.0], // A3
+      [246.9, 2.0], // B3
+      [196.0, 2.0], // G3
+    ];
+
+    function playNote(freq, startTime, duration, vol, type) {
+      const osc  = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = type || 'triangle';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(vol, startTime + 0.03);
+      gain.gain.linearRampToValueAtTime(vol * 0.7, startTime + duration * 0.6);
+      gain.gain.linearRampToValueAtTime(0, startTime + duration * 0.95);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    }
+
+    function scheduleMelody() {
+      if (!musicPlaying) return;
+      const bpm = 126;
+      const beat = 60 / bpm;
+      let t = audioCtx.currentTime + 0.05;
+
+      melody.forEach(([freq, beats]) => {
+        playNote(freq, t, beats * beat * 0.88, 0.18, 'triangle');
+        t += beats * beat;
+      });
+
+      let tb = audioCtx.currentTime + 0.05;
+      bass.forEach(([freq, beats]) => {
+        playNote(freq, tb, beats * beat * 0.75, 0.09, 'sine');
+        tb += beats * beat;
+      });
+
+      const total = melody.reduce((s,[,b]) => s + b, 0) * beat;
+      nextLoopTimer = setTimeout(scheduleMelody, (total - 0.1) * 1000);
+    }
+
+    function toggleMusic() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      const btn = document.getElementById('music-btn');
+      if (musicPlaying) {
+        musicPlaying = false;
+        if (nextLoopTimer) clearTimeout(nextLoopTimer);
+        btn.textContent = '🎵 Play Music';
+        btn.classList.remove('playing');
+        // Stop dance party & love messages
+        if (danceInterval) { clearInterval(danceInterval); danceInterval = null; }
+        if (loveInterval) { clearInterval(loveInterval); loveInterval = null; }
+        document.getElementById('dance-box').innerHTML = '';
+        document.getElementById('love-box').style.display = 'none';
+      } else {
+        musicPlaying = true;
+        scheduleMelody();
+        btn.textContent = '🔇 Stop Music';
+        btn.classList.add('playing');
+        // Start dance party + show love message
+        danceParty();
+        showLove();
+      }
+    }
+
+    // ── Keepy Uppy Game ──────────────────────────────────────────
+    const kuCanvas  = document.getElementById('ku-canvas');
+    const kuCtx     = kuCanvas.getContext('2d');
+    const KUW       = kuCanvas.width;
+    const KUH       = kuCanvas.height;
+
+    let kuState     = 'idle';   // idle | playing | gameover
+    let kuScore     = 0;
+    let kuBest      = 0;
+    let kuFrameId   = null;
+
+    // Balloon physics
+    let bx, by, bvx, bvy;
+    const BRX = 28, BRY = 35;   // balloon radii
+    const GRAVITY   = 0.28;
+    const TAP_VY    = -13.5;
+    const MAX_BVX   = 5;
+
+    // Wind
+    let wind = 0, windTimer = 0;
+
+    // Popup "+1" text list
+    let popups = [];
+
+    // Combo (unused visually but tracked)
+    let combo = 0;
+
+    function kuInit() {
+      bx  = KUW / 2;
+      by  = KUH / 2;
+      bvx = (Math.random() - 0.5) * 2;
+      bvy = -6;
+      kuScore  = 0;
+      wind     = 0;
+      windTimer= 0;
+      popups   = [];
+      combo    = 0;
+      document.getElementById('ku-score').textContent = '0';
+      kuState = 'playing';
+    }
+
+    function kuTap() {
+      if (kuState === 'idle' || kuState === 'gameover') {
+        kuInit(); return;
+      }
+      // Upward impulse
+      bvy = TAP_VY;
+      bvx += (Math.random() - 0.5) * 3 + wind * 0.5;
+      bvx = Math.max(-MAX_BVX, Math.min(MAX_BVX, bvx));
+      kuScore++;
+      combo++;
+      if (kuScore > kuBest) {
+        kuBest = kuScore;
+        document.getElementById('ku-best').textContent = kuBest;
+      }
+      document.getElementById('ku-score').textContent = kuScore;
+      popups.push({x: bx, y: by - BRY - 10, alpha: 1, vy: -2});
+      if (audioCtx) playJingle(true);
+    }
+
+    function kuUpdate() {
+      if (kuState !== 'playing') return;
+
+      // Wind changes every ~3s
+      windTimer++;
+      if (windTimer > 180) {
+        wind = (Math.random() - 0.5) * 2.5;
+        windTimer = 0;
+      }
+
+      bvy += GRAVITY;
+      bvx *= 0.995;
+      bx  += bvx;
+      by  += bvy;
+
+      // Wall bounce
+      if (bx - BRX < 0)   { bx = BRX;       bvx =  Math.abs(bvx) * 0.7; }
+      if (bx + BRX > KUW) { bx = KUW - BRX; bvx = -Math.abs(bvx) * 0.7; }
+      // Ceiling bounce
+      if (by - BRY < 0)   { by = BRY;        bvy =  Math.abs(bvy) * 0.5; }
+
+      // Ground = game over
+      if (by + BRY > KUH - 20) {
+        by = KUH - 20 - BRY;
+        kuState = 'gameover';
+      }
+
+      // Popups
+      popups = popups.filter(p => p.alpha > 0);
+      popups.forEach(p => { p.y += p.vy; p.alpha -= 0.025; });
+    }
+
+    function kuDraw() {
+      // Sky-blue background gradient
+      const grad = kuCtx.createLinearGradient(0, 0, 0, KUH);
+      grad.addColorStop(0,   '#87CEEB');
+      grad.addColorStop(1,   '#C8EAFF');
+      kuCtx.fillStyle = grad;
+      kuCtx.fillRect(0, 0, KUW, KUH);
+
+      // Ground strip
+      kuCtx.fillStyle = '#6DD46D';
+      kuCtx.fillRect(0, KUH - 22, KUW, 22);
+      kuCtx.fillStyle = '#7DE07D';
+      kuCtx.fillRect(0, KUH - 22, KUW, 10);
+
+      // Clouds
+      drawKuCloud(60,  55, 0.7);
+      drawKuCloud(280, 40, 0.9);
+      drawKuCloud(160, 90, 0.5);
+
+      if (kuState === 'idle') {
+        kuDrawIdle();
+      } else {
+        // String from balloon knot
+        kuCtx.save();
+        kuCtx.strokeStyle = 'rgba(0,0,0,0.35)';
+        kuCtx.lineWidth = 1.5;
+        kuCtx.beginPath();
+        kuCtx.moveTo(bx, by + BRY + 5);
+        kuCtx.bezierCurveTo(
+          bx + 15, by + BRY + 45,
+          bx - 12, by + BRY + 80,
+          bx + 5,  by + BRY + 110
+        );
+        kuCtx.stroke();
+        kuCtx.restore();
+
+        // Balloon
+        drawBalloon(bx, by);
+
+        // Popups
+        popups.forEach(p => {
+          kuCtx.save();
+          kuCtx.globalAlpha = p.alpha;
+          kuCtx.font = 'bold 26px Nunito,sans-serif';
+          kuCtx.textAlign = 'center';
+          kuCtx.strokeStyle = '#c9a800';
+          kuCtx.lineWidth = 4;
+          kuCtx.fillStyle = '#FFE066';
+          kuCtx.strokeText('+1', p.x, p.y);
+          kuCtx.fillText('+1', p.x, p.y);
+          kuCtx.restore();
+        });
+      }
+
+      if (kuState === 'gameover') kuDrawGameOver();
+    }
+
+    function drawKuCloud(cx, cy, scale) {
+      kuCtx.save();
+      kuCtx.fillStyle = 'rgba(255,255,255,0.85)';
+      kuCtx.beginPath();
+      kuCtx.ellipse(cx,          cy,      52*scale, 26*scale, 0, 0, Math.PI*2);
+      kuCtx.fill();
+      kuCtx.beginPath();
+      kuCtx.ellipse(cx+30*scale, cy-8*scale, 36*scale, 22*scale, 0, 0, Math.PI*2);
+      kuCtx.fill();
+      kuCtx.beginPath();
+      kuCtx.ellipse(cx-28*scale, cy-5*scale, 30*scale, 18*scale, 0, 0, Math.PI*2);
+      kuCtx.fill();
+      kuCtx.restore();
+    }
+
+    function drawBalloon(x, y) {
+      kuCtx.save();
+      kuCtx.shadowColor = 'rgba(0,80,180,0.3)';
+      kuCtx.shadowBlur  = 12;
+      kuCtx.shadowOffsetY = 6;
+
+      // Body
+      kuCtx.fillStyle = '#3B7DD8';
+      kuCtx.beginPath();
+      kuCtx.ellipse(x, y, BRX, BRY, 0, 0, Math.PI*2);
+      kuCtx.fill();
+      kuCtx.restore();
+
+      // Highlight
+      kuCtx.fillStyle = 'rgba(255,255,255,0.42)';
+      kuCtx.beginPath();
+      kuCtx.ellipse(x - BRX*0.28, y - BRY*0.28, BRX*0.38, BRY*0.32, -0.3, 0, Math.PI*2);
+      kuCtx.fill();
+
+      // Rim edge
+      kuCtx.strokeStyle = 'rgba(28,78,160,0.55)';
+      kuCtx.lineWidth = 2;
+      kuCtx.beginPath();
+      kuCtx.ellipse(x, y, BRX, BRY, 0, 0, Math.PI*2);
+      kuCtx.stroke();
+
+      // Knot
+      kuCtx.fillStyle = '#1a4d8a';
+      kuCtx.beginPath();
+      kuCtx.arc(x, y + BRY + 3, 5, 0, Math.PI*2);
+      kuCtx.fill();
+    }
+
+    function kuDrawIdle() {
+      // Draw a still balloon in center
+      drawBalloon(KUW/2, KUH/2 - 30);
+      // String
+      kuCtx.strokeStyle = 'rgba(0,0,0,0.3)';
+      kuCtx.lineWidth = 1.5;
+      kuCtx.beginPath();
+      kuCtx.moveTo(KUW/2, KUH/2 - 30 + BRY + 5);
+      kuCtx.bezierCurveTo(KUW/2+12, KUH/2+30, KUW/2-10, KUH/2+60, KUW/2+5, KUH/2+90);
+      kuCtx.stroke();
+
+      // Text
+      kuCtx.save();
+      kuCtx.textAlign = 'center';
+      kuCtx.font = 'bold 28px Nunito,sans-serif';
+      kuCtx.fillStyle = '#1B6CA8';
+      kuCtx.fillText('Tap to Start!', KUW/2, KUH/2 + 130);
+      kuCtx.font = '18px Nunito,sans-serif';
+      kuCtx.fillStyle = '#555';
+      kuCtx.fillText('Keep the balloon in the air!', KUW/2, KUH/2 + 158);
+      kuCtx.restore();
+    }
+
+    function kuDrawGameOver() {
+      // Semi-transparent overlay
+      kuCtx.fillStyle = 'rgba(255,255,255,0.82)';
+      kuCtx.beginPath();
+      kuCtx.roundRect(KUW/2 - 150, KUH/2 - 90, 300, 180, 20);
+      kuCtx.fill();
+
+      kuCtx.strokeStyle = '#1B6CA8';
+      kuCtx.lineWidth = 3;
+      kuCtx.beginPath();
+      kuCtx.roundRect(KUW/2 - 150, KUH/2 - 90, 300, 180, 20);
+      kuCtx.stroke();
+
+      kuCtx.textAlign = 'center';
+      kuCtx.font = 'bold 30px Nunito,sans-serif';
+      kuCtx.fillStyle = '#E8622A';
+      kuCtx.fillText('💔 Oh no!', KUW/2, KUH/2 - 48);
+
+      kuCtx.font = 'bold 20px Nunito,sans-serif';
+      kuCtx.fillStyle = '#1B6CA8';
+      kuCtx.fillText(`Score: ${kuScore}${kuScore === kuBest && kuScore > 0 ? ' 🏆' : ''}`, KUW/2, KUH/2 - 12);
+
+      kuCtx.font = '16px Nunito,sans-serif';
+      kuCtx.fillStyle = '#555';
+      kuCtx.fillText(`Best: ${kuBest}`, KUW/2, KUH/2 + 16);
+
+      kuCtx.font = 'bold 18px Nunito,sans-serif';
+      kuCtx.fillStyle = '#1B6CA8';
+      kuCtx.fillText('Tap to play again!', KUW/2, KUH/2 + 58);
+    }
+
+    function kuLoop() {
+      kuUpdate();
+      kuDraw();
+      kuFrameId = requestAnimationFrame(kuLoop);
+    }
+
+    function openKeepyUppy() {
+      document.getElementById('ku-overlay').classList.add('open');
+      kuState = 'idle';
+      kuScore = 0;
+      kuDraw();
+      if (kuFrameId) cancelAnimationFrame(kuFrameId);
+      kuLoop();
+    }
+
+    function closeKeepyUppy() {
+      document.getElementById('ku-overlay').classList.remove('open');
+      if (kuFrameId) { cancelAnimationFrame(kuFrameId); kuFrameId = null; }
+      kuState = 'idle';
+    }
+
+    function kuOverlayClick(e) {
+      if (e.target === document.getElementById('ku-overlay')) closeKeepyUppy();
+    }
+
+    function openGame(title, url) {
+      document.getElementById('game-modal-title').textContent = title;
+      document.getElementById('game-iframe').src = url;
+      document.getElementById('game-overlay').classList.add('open');
+    }
+    function closeGameModal() {
+      document.getElementById('game-overlay').classList.remove('open');
+      document.getElementById('game-iframe').src = '';
+    }
+    function closeGame(e) {
+      if (e.target === document.getElementById('game-overlay')) closeGameModal();
+    }
+
+    kuCanvas.addEventListener('click', kuTap);
+    kuCanvas.addEventListener('touchstart', e => { e.preventDefault(); kuTap(); }, {passive:false});
+
+    // Short jingle for trivia feedback
+    function playJingle(correct) {
+      if (!audioCtx) return;
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      if (correct) {
+        // Happy arpeggio: C-E-G-C
+        [[523,0],[659,0.12],[784,0.24],[1047,0.36]].forEach(([f,d]) =>
+          playNote(f, audioCtx.currentTime + d, 0.18, 0.15, 'triangle'));
+      } else {
+        // Sad trombone: B-A
+        [[311,0],[277,0.2]].forEach(([f,d]) =>
+          playNote(f, audioCtx.currentTime + d, 0.22, 0.13, 'sawtooth'));
+      }
+    }
+  </script>
+</body>
+</html>
